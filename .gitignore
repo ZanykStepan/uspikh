@@ -1,0 +1,45 @@
+# Залежності
+node_modules/
+.pnpm-store/
+
+# Збірка
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Локальні дані застосунку (створюються під час роботи)
+server/data.json
+server/data.json.tmp
+server/demo-data.json
+server/demo-data.json.tmp
+
+# Змінні середовища
+.env
+.env.*
+!.env.example
+
+# Журнали
+*.log
+npm-debug.log*
+
+# Тимчасові файли й кеші
+.cache/
+.vite/
+coverage/
+*.tmp
+*.bak
+
+# Редактори та IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Системні файли
+.DS_Store
+Thumbs.db
+
+# Резервні копії й архіви
+*.zip
+*_backup*/
+Карта_коду.md
