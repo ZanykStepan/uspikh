@@ -149,7 +149,7 @@ function baseSeed() {
       {
         notification_id: 1,
         user_id: 1,
-        message: "Відкрито вибір дисциплін на 2 півріччя.",
+        message: "Відкрито вибір дисциплін на 2 семестр.",
         is_read: false,
         created_at: "2026-10-28T07:00:00Z",
       },
@@ -185,7 +185,7 @@ export function seed() {
   }
   db.notifications = db.notifications.map((item) => ({
     ...item,
-    message: item.message.replaceAll("весняний семестр", "2 півріччя").replaceAll("осінній семестр", "1 півріччя"),
+    message: item.message.replaceAll("весняний семестр", "2 семестр").replaceAll("осінній семестр", "1 семестр"),
   }));
   return db;
 }

@@ -5,8 +5,11 @@ const fingerprint = (entity, row) =>
 
 const WRITE_LOCK = 8_100_001;
 
-async function loadEntity(client, entity) {
-  const { rows } = await client.query(`SELECT ${entity.columns.join(", ")} FROM ${entity.name} ORDER BY ${entity.pk}`);
+async function loadEntity(client, entity, filter = {}) {
+  const where = filter.where ? ` WHERE ${filter.where}` : "";
+  const order = filter.limit ? `ORDER BY ${entity.pk} DESC LIMIT ${Number(filter.limit)}` : `ORDER BY ${entity.pk}`;
+  const { rows } = await client.query(`SELECT ${entity.columns.join(", ")} FROM ${entity.name}${where} ${order}`, filter.params || []);
+  if (filter.limit) rows.reverse();
   const links = [];
   for (const link of entity.links || []) {
     const order = link.columns.includes("position") ? `${link.fk}, position` : link.fk;
@@ -22,9 +25,9 @@ async function loadEntity(client, entity) {
   return rows;
 }
 
-export async function loadSnapshot(client) {
+export async function loadSnapshot(client, filters = {}) {
   const db = {};
-  for (const entity of ENTITIES) db[entity.name] = await loadEntity(client, entity);
+  for (const entity of ENTITIES) db[entity.name] = await loadEntity(client, entity, filters[entity.name]);
   return db;
 }
 
@@ -93,12 +96,12 @@ export class UnitOfWork {
     );
   }
 
-  static async begin(pool, { write = false } = {}) {
+  static async begin(pool, { write = false, filters = {} } = {}) {
     const client = await pool.connect();
     try {
       await client.query(write ? "BEGIN" : "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY");
       if (write) await client.query("SELECT pg_advisory_xact_lock($1)", [WRITE_LOCK]);
-      return new UnitOfWork(client, await loadSnapshot(client), write);
+      return new UnitOfWork(client, await loadSnapshot(client, filters), write);
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
       client.release();

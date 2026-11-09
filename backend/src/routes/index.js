@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { authenticate, requireAuth } from "../middleware/authenticate.js";
 import * as authController from "../controllers/authController.js";
 import * as c from "../controllers/journalController.js";
+import * as notifications from "../controllers/notificationController.js";
 import { directoryKeys } from "../services/directoryService.js";
 import { fail } from "../utils/httpError.js";
 
@@ -39,6 +40,8 @@ export function createRouter({ limitLogin = true } = {}) {
 
   router.use(requireAuth);
   router.get("/bootstrap", c.bootstrap);
+  router.get("/notifications/stream", notifications.stream);
+  router.get("/notifications/unread", notifications.unread);
   router.patch("/disciplines/:id/details", c.updateDisciplineDetails);
   router.post("/progression/:action", c.progression);
   router.post("/graduations/:action", c.graduation);
@@ -53,11 +56,14 @@ export function createRouter({ limitLogin = true } = {}) {
   router.delete("/elective_enrollments/:id", c.cancelElectiveRequest);
   router.patch("/elective_enrollments/:id", c.reviewElectiveRequest);
   router.patch("/debts/:id", c.patchDebt);
+  router.post("/notifications/read-all", c.markAllNotificationsRead);
   router.patch("/notifications/:id", c.markNotificationRead);
   router.post("/elective_limits", c.saveElectiveLimits);
+  router.post("/users/import", c.importUsers);
   for (const resource of Object.keys(directoryKeys)) {
     router.post(`/${resource}`, c.directory);
     router.patch(`/${resource}/:id`, c.directory);
+    router.delete(`/${resource}/:id`, c.removeDirectoryRecord);
   }
 
   router.get("/admin/login-events", authController.loginEvents);

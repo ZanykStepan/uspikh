@@ -1,3 +1,4 @@
+import { isArchivedStudent } from "../domain/validators.js";
 import { semesterNumber } from "../domain/academic.js";
 
 export function buildBootstrap(c) {
@@ -43,7 +44,7 @@ export function buildBootstrap(c) {
         const discipline = db.disciplines.find((item) => item.discipline_id === assignment.discipline_id);
         const semester = db.semesters.find((item) => item.semester_id === assignment.semester_id);
         return (
-          actor.student_status !== "graduated" &&
+          !isArchivedStudent(actor.student_status) &&
           currentGroup?.status === "active" &&
           discipline?.is_elective &&
           discipline.status === "active" &&
@@ -174,7 +175,8 @@ export function buildBootstrap(c) {
       (actor.role === "dean" && userFaculty(db.users.find((user) => user.user_id === request.student_id)) === actor.faculty) ||
       (actor.role === "teacher" && request.requested_by === actor.user_id),
   );
-  if (actor.role !== "admin") own.audit_logs = [];
+  if (actor.role === "dean") own.audit_logs = db.audit_logs.filter((entry) => entry.faculty === actor.faculty);
+  else if (actor.role !== "admin") own.audit_logs = [];
   own.users = own.users.map(({ password_hash, ...user }) => user);
   return { status: 200, data: own };
 }

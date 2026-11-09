@@ -2,6 +2,7 @@ import { randomUUID, randomBytes, createHash } from "node:crypto";
 import jwt from "jsonwebtoken";
 import { config } from "../config/index.js";
 import { fail } from "../utils/httpError.js";
+import { isCorporateEmail as isAllowedEmail } from "../domain/validators.js";
 import { hashSecret, verifySecret, passwordProblem, generateTemporaryPassword } from "../utils/passwords.js";
 
 const BAD_CREDENTIALS = "Невірна університетська пошта або пароль.";
@@ -12,7 +13,7 @@ export const normalizeEmail = (value) =>
   String(value ?? "")
     .trim()
     .toLowerCase();
-export const isCorporateEmail = (email) => /^[^\s@]+@[^\s@]+$/.test(email) && config.allowedEmailDomains.includes(email.split("@")[1]);
+export const isCorporateEmail = (email) => isAllowedEmail(email, config.allowedEmailDomains);
 
 const publicUser = (row) => ({ user_id: row.user_id, full_name: row.full_name, role: row.role, roles: row.roles, email: row.email });
 
@@ -91,6 +92,10 @@ export async function loginWithPassword(db, { email, password }, req) {
     });
     fail(401, BAD_CREDENTIALS);
   }
+  if (account.must_change_password && account.password_expires_at && new Date(account.password_expires_at) < new Date()) {
+    await logEvent(db, { userId: account.user_id, email: address, method: "password", success: false, reason: "temporary_expired", req });
+    fail(401, "Строк дії тимчасового пароля минув. Зверніться до адміністратора по новий.");
+  }
   await db.query("UPDATE users SET failed_attempts = 0, locked_until = NULL WHERE user_id = $1", [account.user_id]);
   await logEvent(db, { userId: account.user_id, email: address, method: "password", success: true, req });
   return { ...(await issueSession(db, account, { method: "password" })), must_change_password: account.must_change_password };
@@ -138,10 +143,10 @@ export async function changePassword(db, auth, { current_password, new_password 
   }
   if (account.password_hash && (await verifySecret(new_password, account.password_hash)))
     fail(422, "Новий пароль має відрізнятися від поточного.");
-  await db.query("UPDATE users SET password_hash = $2, password_changed_at = now(), must_change_password = false WHERE user_id = $1", [
-    account.user_id,
-    await hashSecret(new_password),
-  ]);
+  await db.query(
+    "UPDATE users SET password_hash = $2, password_changed_at = now(), must_change_password = false, password_expires_at = NULL WHERE user_id = $1",
+    [account.user_id, await hashSecret(new_password)],
+  );
   await db.query("UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND jti <> $2 AND revoked_at IS NULL", [
     account.user_id,
     auth.jti,
@@ -163,8 +168,8 @@ export async function issueReservePassword(db, actor, userId, audit) {
   if (!account) fail(404, "Користувача не знайдено.");
   const password = generateTemporaryPassword();
   await db.query(
-    "UPDATE users SET password_hash = $2, password_changed_at = now(), must_change_password = true, failed_attempts = 0, locked_until = NULL WHERE user_id = $1",
-    [userId, await hashSecret(password)],
+    "UPDATE users SET password_hash = $2, password_changed_at = now(), must_change_password = true, password_expires_at = now() + make_interval(hours => $3), failed_attempts = 0, locked_until = NULL WHERE user_id = $1",
+    [userId, await hashSecret(password), config.tempPasswordHours],
   );
   await db.query("UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL", [userId]);
   audit(actor, "security.reserve_password", `user:${userId}`, "Видано тимчасовий резервний пароль");
@@ -172,7 +177,8 @@ export async function issueReservePassword(db, actor, userId, audit) {
     user_id: userId,
     email: account.email,
     password,
-    message: "Передайте пароль користувачу. Повторно він не показується; при першому вході його потрібно змінити.",
+    expires_in_hours: config.tempPasswordHours,
+    message: `Передайте пароль користувачу. Повторно він не показується; діє ${config.tempPasswordHours} год і при першому вході його потрібно змінити.`,
   };
 }
 

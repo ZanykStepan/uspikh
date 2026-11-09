@@ -1,4 +1,5 @@
 import { Layers } from "lucide-react";
+import { formatDate } from "../format";
 import { todayKyiv } from "../domain";
 
 const statusNames = { pending: "Очікує", approved: "Підтверджено", rejected: "Відхилено" };
@@ -47,8 +48,8 @@ export default function Electives({ db, choices, busy, onAction }) {
           return <section className="panel elective-card" key={`${discipline.discipline_id}:${offering.semester_id}`}>
             <Layers/><span className="badge neutral">{catalogNames[catalog]} · {discipline.credits} кредити ЄКТС</span>
             <h2>{discipline.name}</h2>
-            <p className="muted">{term?.term_number} півріччя · {term?.academic_year}</p>
-            <p className="muted">Запис: {discipline.enrollment_start} — {discipline.enrollment_deadline}</p>
+            <p className="muted">{term?.term_number} семестр · {term?.academic_year}</p>
+            <p className="muted">Запис: {formatDate(discipline.enrollment_start)} — {formatDate(discipline.enrollment_deadline)}</p>
             <p className="elective-seats"><span>Обрали: <strong>{offering.taken}</strong></span><span>Вільно: <strong>{free}</strong> із {discipline.capacity}</span></p>
             <p className="muted elective-description">{discipline.description || "Опис дисципліни ще не додано."}{discipline.syllabus_url && <a href={discipline.syllabus_url} target="_blank" rel="noopener noreferrer">Силабус ↗</a>}</p>
             {enrollment && enrollment.status !== "rejected"

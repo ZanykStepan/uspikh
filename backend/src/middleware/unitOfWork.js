@@ -1,6 +1,8 @@
+import { bootstrapFilters } from "../repositories/bootstrapScope.js";
 import { UnitOfWork } from "../repositories/unitOfWork.js";
 import { createContext } from "../services/domainContext.js";
 import { fail } from "../utils/httpError.js";
+import { isArchivedStudent } from "../domain/validators.js";
 
 const accessible = (account) => account && (account.status === "active" || (account.status === "graduated" && account.role === "student"));
 
@@ -27,15 +29,23 @@ async function reconcileIfNeeded(deps) {
   }
 }
 
-export function transactional(handler, { write = true } = {}) {
+async function scopeFor(deps, req) {
+  const userId = req.auth?.userId ?? (deps.allowDemoHeader ? Number(req.headers["x-demo-user"] || 1) : null);
+  if (!userId) return {};
+  let role = req.auth?.role;
+  if (!role) role = (await deps.pool.query("SELECT role FROM users WHERE user_id = $1", [userId])).rows[0]?.role;
+  return role ? bootstrapFilters({ userId, role }) : {};
+}
+
+export function transactional(handler, { write = true, scoped = false } = {}) {
   return async (req, res) => {
     const deps = req.app.locals.deps;
     if (!write) await reconcileIfNeeded(deps);
-    const uow = await UnitOfWork.begin(deps.pool, { write });
+    const uow = await UnitOfWork.begin(deps.pool, { write, filters: scoped ? await scopeFor(deps, req) : {} });
     try {
       const actor = resolveActor(uow.db, req, deps);
       const ctx = createContext(uow.db, { currentDate: deps.today, actor });
-      if (actor.role === "student" && actor.student_status === "graduated" && req.method !== "GET")
+      if (actor.role === "student" && isArchivedStudent(actor.student_status) && req.method !== "GET")
         fail(403, "Архівний профіль доступний лише для перегляду.");
       if (write && deps.state.reconciledOn !== deps.today()) ctx.reconcileDebts();
       const resource = req.params.resource ?? req.path.split("/")[1];
@@ -49,8 +59,17 @@ export function transactional(handler, { write = true } = {}) {
         parts: ["", "api", resource, req.params.action ?? req.params.id],
         resource,
       });
+      if (result.rollback) {
+        await uow.rollback();
+        return res.status(result.status).json(result.data);
+      }
       if (write && result.status < 400) ctx.reconcileDebts();
+      const created = uow.write ? uow.db.notifications.filter((item) => !uow.before.notifications.has(item.notification_id)) : [];
       await uow.commit();
+      if (uow.write) {
+        for (const item of created) await deps.bus.publish(item.user_id, item).catch(() => {});
+        if (resource === "notifications") await deps.bus.invalidate(actor.user_id).catch(() => {});
+      }
       if (write) deps.state.reconciledOn = deps.today();
       res.status(result.status).json(result.data);
     } catch (error) {

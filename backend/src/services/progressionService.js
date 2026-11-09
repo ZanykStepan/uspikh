@@ -55,7 +55,7 @@ export function promoteGroups(c) {
 
 export function graduateGroups(c) {
   const { db, actor, body, parts, fail, id, audit, graduationPreview } = c;
-  if (!["admin", "dean"].includes(actor.role)) fail(403, "Випуск виконує адміністратор або деканат.");
+  if (!["admin", "dean"].includes(actor.role)) fail(403, "Завершення навчання виконує адміністратор або деканат.");
   const plan = graduationPreview(body.group_ids);
   if (actor.role === "dean" && plan.rows.some((row) => row.faculty !== actor.faculty))
     fail(403, "Деканат може випускати лише групи свого факультету.");
@@ -72,7 +72,7 @@ export function graduateGroups(c) {
     group.graduation_year = plan.graduation_year;
     for (const studentId of row.graduate_ids) {
       const student = db.users.find((user) => user.user_id === studentId);
-      student.student_status = "graduated";
+      student.student_status = plan.kind === "certificate" ? "dismissed" : "graduated";
       student.graduated_at = at;
       student.status = student.roles.some((role) => role !== "student") ? "active" : "graduated";
     }
@@ -91,6 +91,7 @@ export function graduateGroups(c) {
     academic_year: plan.academic_year,
     graduation_year: plan.graduation_year,
     course: plan.course,
+    kind: plan.kind,
     group_ids: plan.group_ids,
     rows: plan.rows,
     streams: plan.streams,

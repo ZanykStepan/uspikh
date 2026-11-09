@@ -230,3 +230,17 @@ test("Серверна валідація не покладається на і�
   assert.equal((await call("/groups", "POST", { name: "A", course: 9, admission_year: 2024 }, 10)).status, 422);
   assert.ok(api);
 });
+
+test("Тимчасовий пароль діє обмежений час", async () => {
+  const api = await freshApi({ allowDemoHeader: false });
+  const anonymous = api.client();
+  const admin = api.client((await login(anonymous, "demo10@pnu.edu.ua")).data.token);
+  const issued = (await admin("/admin/users/1/reserve-password", "POST")).data;
+  assert.equal(issued.expires_in_hours, 24);
+  await pool.query("UPDATE users SET password_expires_at = now() - interval '1 minute' WHERE user_id = 1");
+  const expired = await login(anonymous, "demo1@pnu.edu.ua", issued.password);
+  assert.equal(expired.status, 401);
+  assert.match(expired.data.message, /Строк дії/);
+  const reissued = (await admin("/admin/users/1/reserve-password", "POST")).data;
+  assert.equal((await login(anonymous, "demo1@pnu.edu.ua", reissued.password)).status, 200);
+});

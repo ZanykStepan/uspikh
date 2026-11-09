@@ -10,7 +10,7 @@ import {
   convertSemesterScore,
 } from "../src/domain/scoring.js";
 import { seed } from "../src/seed/data.js";
-import { freshClient, freshApi, fixture, closeTests } from "./helpers.mjs";
+import { freshClient, freshApi, fixture, closeTests, pool } from "./helpers.mjs";
 
 after(closeTests);
 test("Student sees only own grades and cannot change grades", async () => {
@@ -424,6 +424,7 @@ test("Per-lesson scales normalize to 100 and reject scores over their maximum", 
 
 test("Stream journal includes two groups and keeps historic roster after course promotion", async () => {
   const call = await freshClient();
+  await pool.query("UPDATE groups SET program_years = 6");
   const teacher = (await call("/bootstrap", "GET", null, 7)).data;
   const assignment = teacher.teaching_assignments.find((item) => item.assignment_id === 1);
   assert.deepEqual(assignment.roster_group_ids, [1, 2]);
@@ -458,6 +459,7 @@ test("Course limit and faculty list are validated", async () => {
   const group = {
     name: "ІПЗ-61",
     course: 6,
+    program_years: 6,
     admission_year: 2021,
     specialty: "Інженерія програмного забезпечення",
     faculty: "Факультет математики та інформатики",
@@ -517,10 +519,19 @@ test("Custom scale and group-specific lesson stay inside the chosen group of a s
 
 test("Dean sees and manages only the own faculty, including course promotion", async () => {
   const call = await freshClient();
+  await pool.query("UPDATE groups SET program_years = 6");
   const foreign = await call(
     "/groups",
     "POST",
-    { name: "Е-41", course: 4, admission_year: 2023, specialty: "Економіка", faculty: "Економічний факультет", status: "active" },
+    {
+      name: "Е-41",
+      course: 4,
+      program_years: 6,
+      admission_year: 2023,
+      specialty: "Економіка",
+      faculty: "Економічний факультет",
+      status: "active",
+    },
     10,
   );
   assert.equal(foreign.status, 201);
@@ -636,6 +647,7 @@ test("Sixth-year graduation is allowed; unfinished term blocks confirmation", as
   const data = seed();
   for (const group of data.groups) {
     group.course = 6;
+    group.program_years = 6;
     group.admission_year = 2021;
   }
   const { call, cleanup } = await fixture(data, "2026-11-01");
@@ -810,4 +822,87 @@ test("A new elective discipline requires a catalog from 1 to 3", async () => {
   assert.equal((await call("/disciplines", "POST", base, 10)).status, 422);
   assert.equal((await call("/disciplines", "POST", { ...base, catalog: 4 }, 10)).status, 422);
   assert.equal((await call("/disciplines", "POST", { ...base, catalog: 2 }, 10)).status, 201);
+});
+
+test("Two-year program ends with dismissal and a PZSO certificate, not with a diploma", async () => {
+  const data = seed();
+  for (const group of data.groups) {
+    group.course = 2;
+    group.admission_year = 2025;
+    group.program_years = 2;
+  }
+  const { call, read, cleanup } = await fixture(data, "2027-07-02");
+  try {
+    const promotion = await call("/progression/preview", "POST", { group_ids: [1, 2] }, 10);
+    assert.equal(promotion.status, 422);
+    const preview = await call("/graduations/preview", "POST", { group_ids: [1, 2] }, 10);
+    assert.equal(preview.status, 200);
+    assert.equal(preview.data.kind, "certificate");
+    assert.equal((await call("/graduations/apply", "POST", { group_ids: [1, 2], preview_key: preview.data.key }, 10)).status, 200);
+    const saved = await read();
+    assert.ok(saved.users.filter((user) => [1, 2, 3, 4, 5].includes(user.user_id)).every((user) => user.student_status === "dismissed"));
+    assert.equal(saved.graduations[0].kind, "certificate");
+    assert.equal((await call("/bootstrap", "GET", null, 1)).status, 200);
+    assert.equal((await call("/elective_enrollments", "POST", { discipline_id: 5, semester_id: 2 }, 1)).status, 403);
+  } finally {
+    await cleanup();
+  }
+});
+
+test("Completion is allowed only after the last course of the group's program", async () => {
+  const data = seed();
+  for (const group of data.groups) {
+    group.course = 3;
+    group.admission_year = 2024;
+  }
+  data.groups[1].program_years = 3;
+  const { call, cleanup } = await fixture(data, "2027-07-02");
+  try {
+    assert.equal((await call("/graduations/preview", "POST", { group_ids: [1] }, 10)).status, 422);
+    assert.equal((await call("/graduations/preview", "POST", { group_ids: [2] }, 10)).status, 422);
+    assert.equal((await call("/progression/preview", "POST", { group_ids: [1, 2] }, 10)).status, 422);
+    const threeYear = await call("/graduations/preview", "POST", { group_ids: [1, 2] }, 10);
+    assert.equal(threeYear.status, 422);
+  } finally {
+    await cleanup();
+  }
+});
+
+test("A five-year program is accepted and completes only after the fifth course", async () => {
+  const call = await freshClient();
+  const group = {
+    name: "МЕД-51",
+    course: 4,
+    program_years: 5,
+    admission_year: 2023,
+    specialty: "Лабораторна діагностика",
+    faculty: "Факультет природничих наук",
+    status: "active",
+  };
+  const created = await call("/groups", "POST", group, 10);
+  assert.equal(created.status, 201);
+  assert.equal(created.data.program_years, 5);
+  assert.equal((await call("/graduations/preview", "POST", { group_ids: [created.data.group_id] }, 10)).status, 422);
+  assert.equal((await call("/groups", "POST", { ...group, name: "МЕД-52", program_years: 7 }, 10)).status, 422);
+  assert.equal((await call("/groups", "POST", { ...group, name: "МЕД-53", course: 6, program_years: 5 }, 10)).status, 422);
+});
+
+test("A three-year program is completed with a diploma after the third course", async () => {
+  const data = seed();
+  for (const group of data.groups) {
+    group.course = 3;
+    group.admission_year = 2024;
+    group.program_years = 3;
+  }
+  const { call, read, cleanup } = await fixture(data, "2027-07-02");
+  try {
+    const preview = await call("/graduations/preview", "POST", { group_ids: [1, 2] }, 10);
+    assert.equal(preview.status, 200);
+    assert.equal(preview.data.kind, "diploma");
+    assert.equal(preview.data.course, 3);
+    assert.equal((await call("/graduations/apply", "POST", { group_ids: [1, 2], preview_key: preview.data.key }, 10)).status, 200);
+    assert.ok((await read()).users.filter((user) => user.group_id).every((user) => user.student_status === "graduated"));
+  } finally {
+    await cleanup();
+  }
 });

@@ -1,9 +1,10 @@
+import { isArchivedStudent } from "../domain/validators.js";
 import { semesterNumber } from "../domain/academic.js";
 
 export function applyForElective(c) {
   const { db, actor, body, resource, currentDate, fail, id, audit, electiveLimitsFor, electiveUsage } = c;
   if (actor.role !== "student") fail(403, "Заявку подає студент.");
-  if (actor.student_status === "graduated" || db.groups.find((group) => group.group_id === actor.group_id)?.status !== "active")
+  if (isArchivedStudent(actor.student_status) || db.groups.find((group) => group.group_id === actor.group_id)?.status !== "active")
     fail(403, "Запис доступний лише студентам активних груп.");
   const d = db.disciplines.find((x) => x.discipline_id === Number(body.discipline_id) && x.is_elective && x.status === "active");
   const s = db.semesters.find((x) => x.semester_id === Number(body.semester_id));
@@ -57,7 +58,7 @@ export function applyForElective(c) {
 
 export function cancelElectiveRequest(c) {
   const { db, actor, recordId, resource, fail, audit, userFaculty } = c;
-  if (actor.student_status === "graduated") fail(403, "Архівний профіль доступний лише для перегляду.");
+  if (isArchivedStudent(actor.student_status)) fail(403, "Архівний профіль доступний лише для перегляду.");
   const row = db[resource].find((x) => x.enrollment_id === recordId);
   if (!row) fail(404, "Заявку не знайдено.");
   if (userFaculty(db.users.find((u) => u.user_id === row.student_id)) !== actor.faculty) fail(403, "Заявка належить іншому факультету.");

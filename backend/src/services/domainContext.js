@@ -1,6 +1,7 @@
 import { lessonTypes, legacyLessonTypes, defaultScale, faculties, semesterNumber } from "../domain/academic.js";
 import { scoreBreakdown } from "../domain/scoring.js";
 import { fail } from "../utils/httpError.js";
+import { isValidCalendarDate, isArchivedStudent, completionKind, formatDate } from "../domain/validators.js";
 
 export const roles = ["student", "teacher", "curator", "dean", "admin"];
 
@@ -9,8 +10,7 @@ export function createContext(db, { currentDate, actor }) {
   const groupFaculty = (groupId) => db.groups.find((g) => g.group_id === groupId)?.faculty;
   const userFaculty = (user) => groupFaculty(user?.group_id) || user?.faculty;
   const id = (table, key) => Math.max(0, ...db[table].map((x) => x[key])) + 1;
-  const isDate = (value) =>
-    typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
+  const isDate = isValidCalendarDate;
   const defaultElectiveLimits = { catalog1_credits: 9, catalog2_credits: 12, max_disciplines: 10 };
   const electiveLimitsFor = (groupId) => {
     const row = db.elective_limits.find((item) => item.group_id === groupId);
@@ -53,6 +53,14 @@ export function createContext(db, { currentDate, actor }) {
     }
     return { description, syllabus_url };
   };
+  const targetFaculty = (target) => {
+    const [resource, rawId] = String(target || "").split(":");
+    const targetId = Number(rawId);
+    if (resource === "groups") return db.groups.find((group) => group.group_id === targetId)?.faculty;
+    if (resource === "users") return userFaculty(db.users.find((user) => user.user_id === targetId));
+    if (resource === "streams") return groupFaculty(db.streams.find((stream) => stream.stream_id === targetId)?.group_ids[0]);
+    return undefined;
+  };
   const audit = (actor, action, target, detail) => {
     db.audit_logs.push({
       audit_id: id("audit_logs", "audit_id"),
@@ -61,6 +69,7 @@ export function createContext(db, { currentDate, actor }) {
       target,
       detail,
       at: new Date().toISOString(),
+      faculty: (actor.role === "admin" ? targetFaculty(target) : userFaculty(actor)) ?? null,
     });
   };
   const assignmentGroupIds = (assignment) =>
@@ -157,7 +166,8 @@ export function createContext(db, { currentDate, actor }) {
     if (!groupIds.length || groupIds.some((groupId) => !Number.isInteger(groupId))) fail(422, "Оберіть групи для переведення.");
     const groups = groupIds.map((groupId) => db.groups.find((group) => group.group_id === groupId && group.status === "active"));
     if (groups.some((group) => !group)) fail(422, "Оберіть активні групи.");
-    if (groups.some((group) => group.course >= 6)) fail(422, "Шостий курс є останнім: переведення далі недоступне.");
+    if (groups.some((group) => group.course >= group.program_years))
+      fail(422, "Для групи це останній курс програми: переведення далі недоступне, виконайте завершення навчання.");
     for (const stream of db.streams.filter((item) => item.status === "active"))
       if (stream.group_ids.some((id) => groupIds.includes(id)) && !stream.group_ids.every((id) => groupIds.includes(id)))
         fail(422, `Групи потоку «${stream.name}» потрібно перевести разом.`);
@@ -217,9 +227,10 @@ export function createContext(db, { currentDate, actor }) {
     if (!groupIds.length || groupIds.some((groupId) => !Number.isInteger(groupId))) fail(422, "Оберіть групи для випуску.");
     const groups = groupIds.map((groupId) => db.groups.find((group) => group.group_id === groupId && group.status === "active"));
     if (groups.some((group) => !group)) fail(422, "Випустити можна лише активні групи.");
-    if (groups.some((group) => ![4, 6].includes(group.course))) fail(422, "Випуск доступний після 4-го або 6-го курсу.");
-    if (new Set(groups.map((group) => `${group.admission_year}|${group.course}`)).size !== 1)
-      fail(422, "Разом випускають групи одного року вступу та курсу.");
+    if (groups.some((group) => group.course !== group.program_years))
+      fail(422, "Завершення навчання доступне лише після останнього курсу програми групи.");
+    if (new Set(groups.map((group) => `${group.admission_year}|${group.course}|${group.program_years}`)).size !== 1)
+      fail(422, "Разом завершують навчання групи одного року вступу, курсу та програми.");
     for (const stream of db.streams.filter((item) => item.status === "active"))
       if (
         stream.group_ids.some((groupId) => groupIds.includes(groupId)) &&
@@ -230,18 +241,19 @@ export function createContext(db, { currentDate, actor }) {
     const academicYear = `${startYear}/${startYear + 1}`;
     const finalTerm = db.semesters.find((semester) => semester.academic_year === academicYear && semester.term_number === 2);
     const studentIds = db.users
-      .filter((user) => hasRole(user, "student") && groupIds.includes(user.group_id) && user.student_status !== "graduated")
+      .filter((user) => hasRole(user, "student") && groupIds.includes(user.group_id) && !isArchivedStudent(user.student_status))
       .map((user) => user.user_id);
     const heldIds = [
       ...new Set(db.debts.filter((debt) => studentIds.includes(debt.student_id) && debt.status === "open").map((debt) => debt.student_id)),
     ];
     const blockers = [];
-    if (!finalTerm) blockers.push(`Для ${academicYear} ще не створено 2 півріччя.`);
+    if (!finalTerm) blockers.push(`Для ${academicYear} ще не створено 2 семестр.`);
     else if (finalTerm.end_date >= currentDate())
-      blockers.push(`2 півріччя завершується ${finalTerm.end_date}; випуск доступний після цієї дати.`);
+      blockers.push(`2 семестр завершується ${formatDate(finalTerm.end_date)}; випуск доступний після цієї дати.`);
+    const kind = completionKind(groups[0]);
     const rows = groups.map((group) => {
       const students = db.users.filter(
-        (user) => hasRole(user, "student") && user.group_id === group.group_id && user.student_status !== "graduated",
+        (user) => hasRole(user, "student") && user.group_id === group.group_id && !isArchivedStudent(user.student_status),
       );
       const graduates = students.filter((student) => !heldIds.includes(student.user_id));
       const held = students.filter((student) => heldIds.includes(student.user_id));
@@ -259,13 +271,15 @@ export function createContext(db, { currentDate, actor }) {
         held_names: held.map((student) => student.full_name),
       };
     });
-    if (!rows.some((row) => row.graduate_ids.length)) blockers.push("У вибраних групах немає студентів, які можуть випуститися.");
+    if (!rows.some((row) => row.graduate_ids.length))
+      blockers.push("У вибраних групах немає студентів, для яких можна завершити навчання.");
     const streams = db.streams
       .filter((stream) => stream.status === "active" && stream.group_ids.every((groupId) => groupIds.includes(groupId)))
       .map((stream) => ({ stream_id: stream.stream_id, name: stream.name, archived_name: `${stream.name} (вип. ${startYear + 1})` }));
     const key = JSON.stringify({
       groupIds,
       academicYear,
+      kind,
       rows: rows.map((row) => [row.group_id, row.name, row.course, row.graduate_ids, row.held_ids]),
       streams: streams.map((stream) => stream.stream_id),
       blockers,
@@ -275,6 +289,7 @@ export function createContext(db, { currentDate, actor }) {
       academic_year: academicYear,
       graduation_year: startYear + 1,
       course: groups[0].course,
+      kind,
       rows,
       streams,
       blockers,

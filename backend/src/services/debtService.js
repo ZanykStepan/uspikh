@@ -1,3 +1,4 @@
+import { formatDate } from "../domain/validators.js";
 export function updateDebt(c) {
   const { db, actor, body, recordId, fail, id, audit, userFaculty, isDate, debtCriteria } = c;
   const row = db.debts.find((x) => x.debt_id === recordId);
@@ -7,7 +8,7 @@ export function updateDebt(c) {
   const nextDeadline = Object.hasOwn(body, "deadline") ? body.deadline : row.deadline;
   if (Object.hasOwn(body, "deadline")) {
     const semester = db.semesters.find((item) => item.semester_id === row.semester_id);
-    if (!isDate(nextDeadline) || nextDeadline <= semester.end_date) fail(422, "Термін ліквідації має бути після завершення півріччя.");
+    if (!isDate(nextDeadline) || nextDeadline <= semester.end_date) fail(422, "Термін ліквідації має бути після завершення семестру.");
   }
   if (Object.hasOwn(body, "status")) {
     if (body.status !== "closed" || row.status !== "open") fail(422, "Деканат може закрити лише відкритий борг.");
@@ -34,11 +35,11 @@ export function updateDebt(c) {
     db.notifications.push({
       notification_id: id("notifications", "notification_id"),
       user_id: row.student_id,
-      message: `Термін ліквідації заборгованості: ${row.deadline}.`,
+      message: `Термін ліквідації заборгованості: ${formatDate(row.deadline)}.`,
       is_read: false,
       created_at: new Date().toISOString(),
     });
   }
-  audit(actor, "debt.update", `debt:${recordId}`, `${row.status}; термін ${row.deadline || "не встановлено"}`);
+  audit(actor, "debt.update", `debt:${recordId}`, `${row.status}; термін ${row.deadline ? formatDate(row.deadline) : "не встановлено"}`);
   return { status: 200, data: row };
 }

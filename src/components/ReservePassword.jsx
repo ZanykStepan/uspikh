@@ -21,7 +21,7 @@ export default function ReservePassword({ user }) {
   return <fieldset className="assignment-fieldset">
     <legend>Резервний вхід</legend>
     <p className="muted">Основний вхід — через корпоративну пошту. Тимчасовий пароль потрібен, лише якщо користувач не може нею скористатися. Передайте його особисто; при першому вході користувач змінить його сам.</p>
-    {issued && <div className="temp-password" role="status"><span>Тимчасовий пароль (показується один раз)</span><code>{issued.password}</code></div>}
+    {issued && <div className="temp-password" role="status"><span>Тимчасовий пароль (показується один раз, діє {issued.expires_in_hours} год)</span><code>{issued.password}</code></div>}
     {error && <p className="muted" role="status">{error}</p>}
     <div className="row-actions"><button type="button" disabled={busy} onClick={issue}><KeyRound size={15}/> Видати тимчасовий пароль</button><button type="button" disabled={busy} onClick={unlock}>Зняти блокування</button></div>
   </fieldset>;

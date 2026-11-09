@@ -14,7 +14,18 @@ export const ENTITIES = [
   {
     name: "groups",
     pk: "group_id",
-    columns: ["group_id", "name", "admission_year", "course", "faculty", "specialty", "status", "graduated_at", "graduation_year"],
+    columns: [
+      "group_id",
+      "name",
+      "admission_year",
+      "course",
+      "program_years",
+      "faculty",
+      "specialty",
+      "status",
+      "graduated_at",
+      "graduation_year",
+    ],
   },
   {
     name: "users",
@@ -184,7 +195,7 @@ export const ENTITIES = [
     columns: ["limit_id", "group_id", "catalog1_credits", "catalog2_credits", "max_disciplines", "updated_by", "updated_at"],
   },
   { name: "notifications", pk: "notification_id", columns: ["notification_id", "user_id", "message", "is_read", "created_at"] },
-  { name: "audit_logs", pk: "audit_id", columns: ["audit_id", "actor_id", "action", "target", "detail", "at"] },
+  { name: "audit_logs", pk: "audit_id", columns: ["audit_id", "actor_id", "action", "target", "detail", "at", "faculty"] },
   {
     name: "group_promotions",
     pk: "promotion_id",
@@ -194,7 +205,7 @@ export const ENTITIES = [
   {
     name: "graduations",
     pk: "graduation_id",
-    columns: ["graduation_id", "actor_id", "at", "academic_year", "graduation_year", "course", "group_ids", "rows", "streams"],
+    columns: ["graduation_id", "actor_id", "at", "academic_year", "graduation_year", "course", "kind", "group_ids", "rows", "streams"],
     jsonColumns: ["group_ids", "rows", "streams"],
   },
 ];

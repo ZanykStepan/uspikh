@@ -20,6 +20,7 @@ export const config = {
   port: Number(process.env.PORT || 4000),
   databaseUrl: process.env.DATABASE_URL || "postgres://uspikh:uspikh_dev@127.0.0.1:5433/uspikh",
   testDatabaseUrl: process.env.TEST_DATABASE_URL || "postgres://uspikh:uspikh_dev@127.0.0.1:5433/uspikh_test",
+  redisUrl: process.env.REDIS_URL ?? "redis://127.0.0.1:6380",
   jwtSecret: process.env.JWT_SECRET || "dev-only-secret-change-me-0123456789abcdef",
   jwtTtlHours: Number(process.env.JWT_TTL_HOURS || 8),
   allowedEmailDomains: list(process.env.ALLOWED_EMAIL_DOMAINS, "pnu.edu.ua,cnu.edu.ua"),
@@ -31,6 +32,13 @@ export const config = {
   },
   frontendUrl: process.env.FRONTEND_URL || "http://127.0.0.1:5173",
   corsOrigins: list(process.env.CORS_ORIGINS, "http://127.0.0.1:5173,http://localhost:5173"),
+  trustProxy:
+    process.env.TRUST_PROXY === undefined || process.env.TRUST_PROXY === "false"
+      ? false
+      : Number.isNaN(Number(process.env.TRUST_PROXY))
+        ? process.env.TRUST_PROXY
+        : Number(process.env.TRUST_PROXY),
+  tempPasswordHours: 24,
   maxFailedAttempts: 5,
   lockMinutes: 15,
 };

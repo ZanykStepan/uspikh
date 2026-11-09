@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { config } from "./config/index.js";
 import { createRouter } from "./routes/index.js";
 import { notFound, errorHandler } from "./middleware/errors.js";
+import { createMemoryBus } from "./services/notificationBus.js";
 import { createGoogleOidc } from "./services/googleOidc.js";
 import { openApiDocument } from "./docs/openapi.js";
 
@@ -18,16 +19,45 @@ export function createApp({
   limitLogin = true,
   quiet = false,
   staticDir,
+  bus = createMemoryBus(),
 } = {}) {
   const app = express();
   const todayFn = typeof today === "function" ? today : () => today || kyivToday();
-  app.locals.deps = { pool, today: todayFn, allowDemoHeader, oidc, quiet, state: { reconciledOn: null } };
+  app.locals.deps = { bus, pool, today: todayFn, allowDemoHeader, oidc, quiet, state: { reconciledOn: null } };
   app.disable("x-powered-by");
-  app.set("trust proxy", false);
-  app.use(helmet({ contentSecurityPolicy: false }));
+  app.set("trust proxy", config.trustProxy);
   app.use(cors({ origin: config.corsOrigins, credentials: false }));
-  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument, { customSiteTitle: "Успіх — API" }));
+  const docsPolicy = helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:"],
+      },
+    },
+  });
+  app.use("/api/docs", docsPolicy, swaggerUi.serve, swaggerUi.setup(openApiDocument, { customSiteTitle: "Успіх — API" }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:"],
+          connectSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+        },
+      },
+    }),
+  );
   app.get("/api/openapi.json", (_req, res) => res.json(openApiDocument));
+  app.use("/api/users/import", express.json({ limit: "512kb" }));
   app.use(
     "/api",
     express.json({ limit: "10kb" }),

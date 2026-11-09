@@ -10,7 +10,7 @@ REST API на Node.js (Express) і PostgreSQL. Маршрути `/api/*` збі�
 cd backend
 npm install
 cp .env.example .env
-npm run db:up
+npm run db:up        # PostgreSQL і Redis
 npm run db:reset
 npm run dev
 ```
@@ -18,6 +18,8 @@ npm run dev
 Сервер: http://127.0.0.1:4000, документація API: http://127.0.0.1:4000/api/docs
 
 Якщо в корені виконано `npm run build`, сервер віддає й інтерфейс. Для розробки інтерфейсу: `npm run dev:api` у корені (Vite на :5173 з проксі на :4000; у `.env` тоді `FRONTEND_URL=http://127.0.0.1:5173`).
+
+Сповіщення доставляються в інтерфейс у реальному часі: Redis pub/sub і потік Server-Sent Events (`GET /api/notifications/stream`). Без Redis сервер працює, але сповіщення передаються лише в межах одного процесу.
 
 ## Тести
 

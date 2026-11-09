@@ -29,7 +29,7 @@ export function saveWeightScheme(c) {
     )
   )
     fail(403, "Дисципліна й курс не закріплені за викладачем.");
-  if (completed(semesterId)) fail(409, "Півріччя завершено. Ваги заблоковані для звичайного редагування.");
+  if (completed(semesterId)) fail(409, "Семестр завершено. Ваги заблоковані для звичайного редагування.");
   const types = lessonTypes;
   const weights = {};
   for (const type of types) {
@@ -68,7 +68,7 @@ export function createLesson(c) {
   );
   if (!assignment) fail(403, "Дисципліна не належить до вашої сфери доступу.");
   const historicExam = completed(assignment.semester_id) && actor.role === "dean" && body.lesson_type === "Екзамен";
-  if (completed(assignment.semester_id) && !historicExam) fail(409, "Півріччя завершено. Історичний екзамен може відновити лише деканат.");
+  if (completed(assignment.semester_id) && !historicExam) fail(409, "Семестр завершено. Історичний екзамен може відновити лише деканат.");
   if (!completed(assignment.semester_id) && actor.role !== "teacher") fail(403, "Поточні заняття створює викладач.");
   const semester = db.semesters.find((s) => s.semester_id === assignment.semester_id);
   const topic = String(body.topic || "").trim();
@@ -139,7 +139,7 @@ export function saveGrade(c) {
   if (!canLesson(lessonId)) fail(403, "Немає права редагувати це заняття.");
   const lesson = db.lessons.find((l) => l.lesson_id === lessonId),
     assignment = db.teaching_assignments.find((a) => a.assignment_id === lesson.assignment_id);
-  if (completed(assignment.semester_id)) fail(409, "Півріччя завершено. Подайте запит на виправлення оцінки до деканату.");
+  if (completed(assignment.semester_id)) fail(409, "Семестр завершено. Подайте запит на виправлення оцінки до деканату.");
   if (
     !db.users.some(
       (u) =>
@@ -206,7 +206,7 @@ export function requestGradeCorrection(c) {
     (lesson.group_id && Number(assignment.student_group_ids?.[studentId]) !== lesson.group_id)
   )
     fail(403, "Це заняття не закріплене за викладачем і студентом.");
-  if (!completed(assignment.semester_id)) fail(409, "Поки півріччя триває, оцінку можна змінити без запиту до деканату.");
+  if (!completed(assignment.semester_id)) fail(409, "Поки семестр триває, оцінку можна змінити без запиту до деканату.");
   if (!Number.isInteger(body.proposed_value) || body.proposed_value < 0 || body.proposed_value > (lesson.max_score || 100))
     fail(422, `Введіть ціле число від 0 до ${lesson.max_score || 100}.`);
   const reason = String(body.reason || "").trim();
@@ -305,7 +305,7 @@ export function updateAttendance(c) {
       )?.semester_id,
     )
   )
-    fail(409, "Півріччя завершено. Відвідуваність заблокована.");
+    fail(409, "Семестр завершено. Відвідуваність заблокована.");
   if (!["present", "absent"].includes(body.status)) fail(422, "Оберіть присутність або пропуск.");
   if (body.status === "absent" && !["поважна", "неповажна"].includes(body.reason)) fail(422, "Оберіть причину пропуску.");
   const changed = row.status !== body.status || row.reason !== (body.status === "present" ? null : body.reason);
@@ -323,6 +323,18 @@ export function updateAttendance(c) {
       created_at: new Date().toISOString(),
     });
   return { status: 200, data: row };
+}
+
+export function markAllNotificationsRead(c) {
+  const { db, actor } = c;
+  let updated = 0;
+  for (const item of db.notifications) {
+    if (item.user_id === actor.user_id && !item.is_read) {
+      item.is_read = true;
+      updated += 1;
+    }
+  }
+  return { status: 200, data: { updated } };
 }
 
 export function markNotificationRead(c) {

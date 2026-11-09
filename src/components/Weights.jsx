@@ -19,7 +19,7 @@ export function WeightSummary({ db, assignment, studentId, onEdit, discipline })
   </section>;
 }
 
-export function WeightEditor({ db, assignment, busy, onClose, onSave }) {
+export function WeightEditor({ db, assignment, busy, serverError, onClose, onSave }) {
   const scheme = weightScheme(db, assignment);
   const [weights, setWeights] = useState(Object.fromEntries(lessonTypes.map((type) => [type, scheme?.weights[type] ?? 0])));
   const [error, setError] = useState("");
@@ -30,11 +30,11 @@ export function WeightEditor({ db, assignment, busy, onClose, onSave }) {
     const clean = Object.fromEntries(lessonTypes.map((type) => [type, Number(weights[type])]));
     if (Object.values(clean).some((value) => !Number.isInteger(value) || value < 0 || value > 100) || sum !== 100) { setError("Установіть цілі ваги від 0 до 100. Сума має дорівнювати 100%."); return; }
     const ok = await onSave({ discipline_id: assignment.discipline_id, semester_id: assignment.semester_id, course, weights: clean });
-    if (!ok) setError("Не вдалося зберегти ваги. Перевірте повідомлення на сторінці.");
-  }}><p className="muted">До завершення півріччя ваги можна змінювати. Нові ваги одразу перерахують попередній бал усіх студентів цієї дисципліни й курсу.</p>
+    if (!ok) setError("");
+  }}><p className="muted">До завершення семестру ваги можна змінювати. Нові ваги одразу перерахують попередній бал усіх студентів цієї дисципліни й курсу.</p>
     <div className="weight-fields">{lessonTypes.map((type) => <label key={type}>{type}<input type="number" min="0" max="100" step="1" value={weights[type]} onChange={(event) => setWeights((current) => ({ ...current, [type]: event.target.value }))}/><span>%</span></label>)}</div>
     <p className={sum === 100 ? "sum-valid" : "error"}>Разом: {sum}% із 100%</p>
-    {error && <p className="error" role="alert">{error}</p>}
+    {(error || serverError) && <p className="error" role="alert">{error || serverError}</p>}
     <div className="modal-actions"><button type="button" onClick={onClose}>Скасувати</button><button className="primary" disabled={busy}>{busy ? "Збереження…" : "Зберегти ваги"}</button></div>
   </form></Modal>;
 }

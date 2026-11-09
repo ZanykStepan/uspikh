@@ -1,5 +1,6 @@
 import { faculties } from "../domain/academic.js";
 import { isCorporateEmail } from "./authService.js";
+import { isArchivedStudent } from "../domain/validators.js";
 
 export const directoryKeys = {
   users: "user_id",
@@ -66,7 +67,7 @@ export function saveDirectoryRecord(c) {
       "enrollment_deadline",
       "status",
     ],
-    groups: ["name", "course", "admission_year", "faculty", "specialty", "status"],
+    groups: ["name", "course", "program_years", "admission_year", "faculty", "specialty", "status"],
     streams: ["name", "group_ids", "status"],
     semesters: ["academic_year", "term_number", "start_date", "end_date", "is_current"],
   };
@@ -100,7 +101,7 @@ export function saveDirectoryRecord(c) {
     value.status ||= "active";
     if (hasRole(value, "student") && !db.groups.some((g) => g.group_id === Number(value.group_id))) fail(422, "Оберіть наявну групу.");
     if (hasRole(value, "student") && row && Number(value.group_id) !== row.group_id) {
-      if (row.student_status === "graduated") fail(409, "Випускника не можна перевести. Історія зберігається в архіві.");
+      if (isArchivedStudent(row.student_status)) fail(409, "Випускника не можна перевести. Історія зберігається в архіві.");
       const destination = db.groups.find((group) => group.group_id === Number(value.group_id) && group.status === "active");
       if (!destination) fail(422, "Перевести студента можна лише до активної групи.");
       if (row.student_status === "repeat_pending") {
@@ -177,6 +178,7 @@ export function saveDirectoryRecord(c) {
   } else if (resource === "groups") {
     value.name = String(value.name || "").trim();
     value.course = Number(value.course);
+    value.program_years = Number(value.program_years ?? 4);
     value.admission_year = Number(value.admission_year);
     if (
       value.name.length < 2 ||
@@ -189,6 +191,8 @@ export function saveDirectoryRecord(c) {
     value.faculty = String(value.faculty || "").trim();
     value.specialty = String(value.specialty || "").trim();
     if (value.specialty.length < 3) fail(422, "Вкажіть спеціальність групи.");
+    if (![2, 3, 4, 5, 6].includes(value.program_years)) fail(422, "Оберіть програму навчання: 2, 3, 4, 5 або 6 років.");
+    if (value.course > value.program_years) fail(422, "Курс не може перевищувати тривалість програми.");
     if (!faculties.includes(value.faculty)) fail(422, "Оберіть факультет зі списку університету.");
     if (actor.role === "dean" && value.faculty !== actor.faculty) fail(403, "Група належить іншому факультету.");
     if (
@@ -211,6 +215,7 @@ export function saveDirectoryRecord(c) {
               otherId !== row.group_id &&
               (other.course !== value.course ||
                 other.admission_year !== value.admission_year ||
+                other.program_years !== value.program_years ||
                 other.specialty !== value.specialty ||
                 other.faculty !== value.faculty)
             );
@@ -235,6 +240,7 @@ export function saveDirectoryRecord(c) {
         (g) =>
           g.course !== groups[0].course ||
           g.admission_year !== groups[0].admission_year ||
+          g.program_years !== groups[0].program_years ||
           g.specialty !== groups[0].specialty ||
           g.faculty !== groups[0].faculty,
       )
@@ -246,7 +252,7 @@ export function saveDirectoryRecord(c) {
     if (row) {
       const removed = row.group_ids.filter((groupId) => !value.group_ids.includes(groupId));
       if (removed.length && db.teaching_assignments.some((a) => a.stream_id === row.stream_id))
-        fail(409, "Групу не можна вилучити з потоку, який уже має призначені дисципліни. Створіть новий потік для наступного півріччя.");
+        fail(409, "Групу не можна вилучити з потоку, який уже має призначені дисципліни. Створіть новий потік для наступного семестру.");
     }
   } else {
     value.academic_year = String(value.academic_year || "").trim();
@@ -264,7 +270,7 @@ export function saveDirectoryRecord(c) {
         (s) => s.semester_id !== row?.semester_id && s.academic_year === value.academic_year && s.term_number === value.term_number,
       )
     )
-      fail(409, "Це півріччя навчального року вже існує.");
+      fail(409, "Цей семестр навчального року вже існує.");
     value.is_current = Boolean(value.is_current);
   }
   let newAssignment = null;

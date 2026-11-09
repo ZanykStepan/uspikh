@@ -6,8 +6,10 @@ import { updateDebt } from "../services/debtService.js";
 import { promoteGroups, graduateGroups } from "../services/progressionService.js";
 import { saveDirectoryRecord, directoryKeys } from "../services/directoryService.js";
 import { fail } from "../utils/httpError.js";
+import { deleteDirectoryRecord } from "../services/directoryDelete.js";
+import { importStudents } from "../services/importService.js";
 
-export const bootstrap = transactional(buildBootstrap, { write: false });
+export const bootstrap = transactional(buildBootstrap, { write: false, scoped: true });
 export const updateDisciplineDetails = transactional(journal.updateDisciplineDetails);
 export const saveWeightScheme = transactional(journal.saveWeightScheme);
 export const createLesson = transactional(journal.createLesson);
@@ -15,6 +17,7 @@ export const saveGrade = transactional(journal.saveGrade);
 export const requestGradeCorrection = transactional(journal.requestGradeCorrection);
 export const reviewGradeCorrection = transactional(journal.reviewGradeCorrection);
 export const updateAttendance = transactional(journal.updateAttendance);
+export const markAllNotificationsRead = transactional(journal.markAllNotificationsRead);
 export const markNotificationRead = transactional(journal.markNotificationRead);
 export const applyForElective = transactional(electives.applyForElective);
 export const cancelElectiveRequest = transactional(electives.cancelElectiveRequest);
@@ -34,3 +37,9 @@ export const directory = transactional((c) => {
   if (!directoryKeys[c.resource]) fail(404, "Маршрут не знайдено.");
   return saveDirectoryRecord(c);
 });
+
+export const removeDirectoryRecord = transactional((c) => {
+  if (!directoryKeys[c.resource]) fail(404, "Маршрут не знайдено.");
+  return deleteDirectoryRecord(c);
+});
+export const importUsers = transactional(importStudents);

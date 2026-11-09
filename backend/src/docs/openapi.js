@@ -51,6 +51,12 @@ const directory = (path, tag, summary, example) => ({
   },
   [`/${path}/{id}`]: {
     patch: op({ tag, summary: `Змінити: ${summary}`, params: [idParam()], requestBody: body(generic, example), okSchema: generic }),
+    delete: op({
+      tag,
+      summary: `Видалити: ${summary} (лише адміністратор, лише запис без пов’язаних даних)`,
+      params: [idParam()],
+      okSchema: { type: "object", properties: { message: { type: "string" } } },
+    }),
   },
 });
 
@@ -298,7 +304,7 @@ export const openApiDocument = {
     "/grade_corrections": {
       post: op({
         tag: "Журнал",
-        summary: "Запит на виправлення оцінки після завершення півріччя",
+        summary: "Запит на виправлення оцінки після завершення семестру",
         requestBody: body({
           type: "object",
           required: ["lesson_id", "student_id", "proposed_value", "reason"],
@@ -406,6 +412,31 @@ export const openApiDocument = {
         okSchema: generic,
       }),
     },
+    "/notifications/stream": {
+      get: {
+        tags: ["Дані"],
+        summary: "Потік сповіщень у реальному часі (Server-Sent Events)",
+        description: "Події `ready` і `notification`. Нові сповіщення надходять через Redis pub/sub.",
+        security: [{ bearerAuth: [] }],
+        responses: { 200: { description: "text/event-stream" }, 401: { description: "Потрібна автентифікація" } },
+      },
+    },
+    "/notifications/unread": {
+      get: op({
+        tag: "Дані",
+        summary: "Кількість непрочитаних сповіщень (лічильник у Redis)",
+        okSchema: { type: "object", properties: { unread: { type: "integer" }, source: { type: "string", enum: ["redis", "memory"] } } },
+        errors: [401],
+      }),
+    },
+    "/notifications/read-all": {
+      post: op({
+        tag: "Дані",
+        summary: "Позначити всі свої сповіщення прочитаними",
+        okSchema: { type: "object", properties: { updated: { type: "integer" } } },
+        errors: [401],
+      }),
+    },
     "/notifications/{id}": {
       patch: op({
         tag: "Дані",
@@ -444,6 +475,19 @@ export const openApiDocument = {
         okSchema: generic,
       }),
     },
+    "/users/import": {
+      post: op({
+        tag: "Довідники",
+        summary: "Імпорт студентів із CSV (ПІБ; пошта; група). dry_run — лише перевірка без збереження",
+        requestBody: body(
+          { type: "object", required: ["csv"], properties: { csv: { type: "string" }, dry_run: { type: "boolean" } } },
+          { csv: "ПІБ; пошта; група\nПетренко Іван Олегович; ivan.petrenko@pnu.edu.ua; ІПЗ-41", dry_run: true },
+        ),
+        ok: 201,
+        okSchema: generic,
+        errors: [401, 403, 422],
+      }),
+    },
     ...directory("users", "Довідники", "користувача (обліковий запис створює адміністратор)", {
       full_name: "Прізвище Ім’я По батькові",
       email: "name@cnu.edu.ua",
@@ -459,7 +503,7 @@ export const openApiDocument = {
       specialty: "Інженерія програмного забезпечення",
     }),
     ...directory("streams", "Довідники", "потік", { name: "Потік ІПЗ-1", group_ids: [3, 4] }),
-    ...directory("semesters", "Довідники", "півріччя", {
+    ...directory("semesters", "Довідники", "семестру", {
       academic_year: "2027/2028",
       term_number: 1,
       start_date: "2027-09-01",
