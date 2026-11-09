@@ -1,8 +1,12 @@
 import { defineConfig } from "vite";
 import { createApi } from "./server/api.mjs";
+
+const target = process.env.VITE_API_TARGET;
+
 export default defineConfig({
   esbuild: { jsx: "automatic" },
-  plugins: [
+  server: target ? { proxy: { "/api": { target, changeOrigin: false } } } : undefined,
+  plugins: target ? [] : [
     {
       name: "uspikh-mock-api",
       configureServer(server) {

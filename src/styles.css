@@ -261,15 +261,15 @@ nav {
 }
 .sidebar-bottom {
   margin-top: auto;
-  padding-top: 25px;
+  padding-top: 14px;
   flex-shrink: 0;
 }
 .help-card {
   position: relative;
   border: 1px solid var(--line);
-  padding: 16px;
-  border-radius: 10px;
-  margin-bottom: 22px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  margin-bottom: 10px;
 }
 .help-card span {
   font-size: 11px;
@@ -278,9 +278,8 @@ nav {
 .help-card p {
   font-size: 10px;
   color: var(--muted);
-  line-height: 1.7;
-  margin-top: 8px;
-  max-width: 145px;
+  line-height: 1.4;
+  margin-top: 2px;
 }
 .help-card svg {
   position: absolute;
@@ -291,7 +290,7 @@ nav {
 .profile {
   display: flex;
   gap: 11px;
-  padding: 18px 6px;
+  padding: 12px 6px;
   border-top: 1px solid var(--line);
   align-items: center;
 }
@@ -1760,7 +1759,7 @@ dialog .check-choice input[type="checkbox"] { margin:0; }
 .login-page { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 18px; background:var(--bg); }
 .login-brand { display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; margin-bottom:26px; max-width:470px; color:var(--muted); font-size:12px; line-height:1.6; }
 .login-brand img { width:160px; height:auto; }
-.login-card { width:min(100%,470px); background:var(--panel); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); padding:34px; }
+.login-card { width:min(100%,520px); background:var(--panel); border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); padding:34px; }
 .login-icon { width:44px; height:44px; display:grid; place-items:center; border-radius:12px; color:var(--green-text); background:var(--green-soft); margin-bottom:18px; }
 .login-card h1 { font-size:29px; letter-spacing:-1px; margin:6px 0 10px; }
 .login-card > .muted { margin-bottom:22px; line-height:1.6; }
@@ -1913,3 +1912,29 @@ dialog .check-choice input[type="checkbox"] { margin:0; }
 .elective-seats { display:flex; flex-wrap:wrap; gap:6px 18px; margin:0; font-size:14px; }
 .elective-seats span { color:var(--muted); }
 .elective-seats strong { color:var(--text); }
+
+.link-button{background:none;border:0;color:var(--accent,#2563eb);cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:8px 0;font:inherit}
+.link-button:hover{text-decoration:underline}
+
+/* Вхід через корпоративну пошту */
+.corp-login { display:flex; align-items:center; gap:16px; padding:16px 20px; border-radius:14px; border:1.5px solid var(--green); background:var(--green-soft); color:var(--text); text-decoration:none; box-shadow:0 6px 18px rgba(0,61,43,.12); transition:transform .12s, box-shadow .12s, background .12s; }
+.corp-login:hover { transform:translateY(-1px); box-shadow:0 10px 24px rgba(0,61,43,.18); }
+.corp-login:focus-visible { outline:3px solid var(--green); outline-offset:3px; }
+.corp-login img { flex:none; }
+.corp-login strong { display:block; font-size:17px; letter-spacing:-.3px; }
+.corp-login small { display:block; margin-top:3px; font-size:12px; color:var(--muted); }
+.reserve-toggle { display:flex; align-items:center; gap:6px; margin:22px auto 0; padding:6px 8px; background:none; border:0; color:var(--muted); font:inherit; font-size:12px; cursor:pointer; }
+.reserve-toggle:hover { color:var(--text); text-decoration:underline; }
+.reserve-toggle svg { transition:transform .15s; }
+.reserve-toggle svg.open { transform:rotate(180deg); }
+.reserve-box { margin-top:10px; padding:16px 18px 18px; border:1px dashed var(--line); border-radius:12px; }
+.reserve-box form label { margin:10px 0; }
+.reserve-box input { font-size:13px; }
+.reserve-submit { width:100%; min-height:38px; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:12px; }
+.reserve-box .login-demo { margin-top:16px; padding:12px; }
+.login-card > .error { margin:14px 0 0; }
+
+.profile-key { margin-left:auto; flex:none; }
+.temp-password { display:grid; gap:6px; margin:10px 0; padding:12px 14px; border:1.5px solid var(--green); border-radius:10px; background:var(--green-soft); }
+.temp-password span { font-size:11px; color:var(--muted); }
+.temp-password code { font-size:20px; font-weight:800; letter-spacing:1px; user-select:all; }

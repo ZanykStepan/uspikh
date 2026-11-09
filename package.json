@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "dev:api": "VITE_API_TARGET=http://127.0.0.1:4000 vite --host 127.0.0.1",
     "build": "vite build",
     "start": "node server/start.mjs",
     "demo": "DEMO_TODAY=2027-07-05 DATA_FILE=server/demo-data.json node server/start.mjs",

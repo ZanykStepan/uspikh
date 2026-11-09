@@ -6,6 +6,8 @@ import StudentJournal from "./components/StudentJournal";
 import DisciplineInfo, { DisciplineDetailsEditor } from "./components/DisciplineInfo";
 import TeacherLessonCard from "./components/TeacherLessonCard";
 import Login from "./components/Login";
+import PasswordModal from "./components/PasswordModal";
+import ReservePassword from "./components/ReservePassword";
 import SemesterScores from "./components/SemesterScores";
 import Progression from "./components/Progression";
 import StudentRecordCard from "./components/StudentRecordCard";
@@ -37,6 +39,20 @@ function saveCSV(name, rows) {
   const a = document.createElement("a"); a.href = url; a.download = name; a.click(); URL.revokeObjectURL(url);
 }
 
+const loginErrors = { domain: "Дозволено лише облікові записи @pnu.edu.ua та @cnu.edu.ua.", not_registered: "Цей обліковий запис не зареєстровано адміністратором.", state: "Сеанс входу завершився. Спробуйте ще раз.", google: "Google не підтвердив вхід. Спробуйте ще раз." };
+(function consumeAuthCallback() {
+  if (!location.hash.startsWith("#/auth/callback")) return;
+  const params = new URLSearchParams(location.hash.split("?")[1] || "");
+  const token = params.get("token");
+  try {
+    if (token) {
+      sessionStorage.setItem("uspikh-token", token);
+      sessionStorage.setItem("uspikh-user-id", String(JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).sub));
+    } else sessionStorage.setItem("uspikh-login-error", loginErrors[params.get("error")] || "Не вдалося увійти.");
+  } catch { sessionStorage.setItem("uspikh-login-error", "Не вдалося увійти."); }
+  history.replaceState(null, "", location.pathname + "#overview");
+})();
+
 export default function App() {
   const [page, setPage] = useState(location.hash.slice(1) || "overview");
   const [theme, setTheme] = useState(localStorage.getItem("uspikh-theme-v2") || "light");
@@ -47,6 +63,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [passwordModal, setPasswordModal] = useState(null);
   const [busy, setBusy] = useState(false);
   const [assignmentId, setAssignmentId] = useState(null);
   const [teacherGroupId, setTeacherGroupId] = useState(0);
@@ -139,10 +156,10 @@ export default function App() {
     saveCSV("uspikh-" + currentAssignment.assignment_id + ".csv", [["Дисципліна", "Група", "Студент", "Дата", "Заняття", "Оцінка", "Максимум"], ...subjectLessons.flatMap((l) => studentsForLesson(l).map((u) => [db.disciplines.find((d)=>d.discipline_id===currentAssignment.discipline_id)?.name, currentAssignment.roster_group_names?.[currentAssignment.student_group_ids?.[u.user_id]], u.full_name, l.lesson_date, l.topic, gradeFor(db,u.user_id,l.lesson_id)?.value ?? "", l.max_score || 100]))]);
   }
   const notifications = <section className="panel">{db?.notifications.map((n) => <div className="notification-row" key={n.notification_id}><Bell size={18}/><div><strong>{n.message}</strong><small>{n.is_read ? "Прочитано" : "Нове сповіщення"}</small></div>{!n.is_read && !(role==="student"&&db?.me?.student_status==="graduated") && <button disabled={busy} onClick={()=>act("/notifications/"+n.notification_id,"PATCH",{},"Сповіщення прочитано.")}><Check size={16}/> Прочитано</button>}</div>)}{!db?.notifications.length && <Empty title="Сповіщень немає"/>}</section>;
-  if (!loggedIn) return <Login theme={theme} setTheme={setTheme} onLogin={({ token, user })=>{sessionStorage.setItem("uspikh-token", token); sessionStorage.setItem("uspikh-user-id", String(user.user_id));setUserId(user.user_id);setLoggedIn(true);go("overview");}}/>;
+  if (!loggedIn) return <Login theme={theme} setTheme={setTheme} onLogin={({ token, user, must_change_password })=>{if(must_change_password)setPasswordModal("forced");sessionStorage.setItem("uspikh-token", token); sessionStorage.setItem("uspikh-user-id", String(user.user_id));setUserId(user.user_id);setLoggedIn(true);go("overview");}}/>;
   const logout = async () => { try { await request("/auth/logout", { method:"POST" }); } catch {} sessionStorage.removeItem("uspikh-token"); sessionStorage.removeItem("uspikh-user-id"); sessionStorage.removeItem("uspikh-semester"); setLoggedIn(false); setUserId(0); setSemester(0); setDb(null); go("overview"); };
   const changeRole = async (nextRole) => { try { await request("/auth/role",{method:"POST",body:{role:nextRole}});setAssignmentId(null);setTeacherGroupId(0);setSelectionSearch("");setTeacherStudentSearch("");setCuratorGroupId(null);setCuratorSearch("");setStudentId(null);go("overview");await reload(); } catch(e) { setError(e.message); } };
-  return <Layout page={page} go={go} theme={theme} setTheme={setTheme} onLogout={logout} onRoleChange={changeRole} userId={userId} semester={semester} setSemester={setSemester} db={db}>
+  return <Layout onPassword={()=>setPasswordModal("manual")} page={page} go={go} theme={theme} setTheme={setTheme} onLogout={logout} onRoleChange={changeRole} userId={userId} semester={semester} setSemester={setSemester} db={db}>
     {loading ? <div className="panel"><p>Завантаження…</p></div> : !db ? <div className="panel error">{error || "Не вдалося завантажити дані."}</div> : <>
       {error && <div className="error-banner" role="alert">{error}</div>}
       {role==="student"&&db.me.student_status==="graduated"&&<div className="archive-banner" role="status">Ви випускник. Журнал і семестрові результати доступні лише для перегляду.</div>}
@@ -225,6 +242,7 @@ export default function App() {
     {modal?.kind==="lesson" && currentAssignment && <LessonEditor assignment={currentAssignment} groupId={teacherGroupId||currentAssignment.group_id||null} semester={db.semesters.find((s)=>s.semester_id===semester)} busy={busy} onClose={()=>setModal(null)} onSave={async(body)=>{const ok=await act("/lessons","POST",body,"Заняття створено. Можна вносити оцінки.");if(ok){setModal(null);setLessonId(null);}return ok;}}/>}
     {modal?.kind==="weights" && currentAssignment && <WeightEditor db={db} assignment={currentAssignment} busy={busy} onClose={()=>setModal(null)} onSave={async(body)=>{const ok=await act("/weight_schemes","POST",body,"Ваги збережено. Попередні бали перераховано.");if(ok)setModal(null);return ok;}}/>}
     {modal?.kind==="discipline_details" && <DisciplineDetailsEditor discipline={modal.discipline} busy={busy} onClose={()=>setModal(null)} onSave={async(body)=>{const ok=await act(`/disciplines/${modal.discipline.discipline_id}/details`,"PATCH",body,"Опис дисципліни збережено.");if(ok)setModal(null);return ok;}}/>}
+    {passwordModal&&<PasswordModal forced={passwordModal==="forced"} onClose={()=>setPasswordModal(null)}/>}
     {modal?.kind==="admin" && <AdminEditor db={db} page={modal.page} record={modal.record} busy={busy} onClose={()=>setModal(null)} onSave={async(body)=>{const cfg=adminConfig[modal.page];const ok=await act("/"+cfg.resource+(modal.record?"/"+modal.record[cfg.key]:""),modal.record?"PATCH":"POST",body,"Довідник оновлено.");if(ok)setModal(null);return ok;}}/>}
   </Layout>;
 }
@@ -287,9 +305,10 @@ function AdminEditor({db,page,record,busy,onClose,onSave}) {
       if(key==="roles")return <fieldset className="checkbox-fieldset" key={key}><legend>Ролі облікового запису</legend>{Object.entries(roleNames).filter(([role])=>db.me.role==="admin"||!["admin","dean"].includes(role)).map(([role,label])=><label className="check-choice" key={role}><input type="checkbox" checked={form.roles?.includes(role)||false} onChange={(event)=>setForm((current)=>({...current,roles:event.target.checked?[...new Set([...(current.roles||[]),role])]:(current.roles||[]).filter((item)=>item!==role)}))}/>{label}</label>)}</fieldset>;
       if(["curated_group_ids","group_ids"].includes(key))return <fieldset className="checkbox-fieldset" key={key}><legend>{fieldLabels[key]}</legend>{db.groups.filter((group)=>group.status==="active").map((group)=><label className="check-choice" key={group.group_id}><input type="checkbox" checked={(form[key]||[]).includes(group.group_id)} onChange={(event)=>toggleGroup(key,group.group_id,event.target.checked)}/>{group.name} · {group.course} курс · {group.specialty}</label>)}</fieldset>;
       const value=form[key]??"";
-      return <label key={key}>{fieldLabels[key]}{key==="description"?<textarea maxLength={2000} rows={4} value={value} onChange={(e)=>update(key,e.target.value)} placeholder="Коротко про зміст і результати навчання"/>:key==="is_elective"||key==="is_current"?<input type="checkbox" checked={!!value} onChange={(e)=>update(key,e.target.checked)}/>:key==="group_id"?<select value={value} onChange={(e)=>update(key,Number(e.target.value))}>{db.groups.filter((group)=>group.status==="active"||group.group_id===Number(value)).map((g)=><option key={g.group_id} value={g.group_id}>{g.name}</option>)}</select>:key==="faculty"?<select value={form.roles?.includes("student")?db.groups.find((group)=>group.group_id===Number(form.group_id))?.faculty||value:value} disabled={form.roles?.includes("student")||db.me.role==="dean"} onChange={(e)=>update(key,e.target.value)}>{(db.me.role==="dean"?[db.me.faculty]:faculties).map((name)=><option key={name} value={name}>{name}</option>)}</select>:key==="status"?<select value={value} onChange={(e)=>update(key,e.target.value)}><option value="active">Активний</option><option value="inactive">Неактивний</option></select>:<input type={key==="syllabus_url"?"url":["credits","semester_number","capacity","course","admission_year","term_number"].includes(key)?"number":["start_date","end_date","enrollment_start","enrollment_deadline"].includes(key)?"date":"text"} maxLength={key==="syllabus_url"?2048:undefined} placeholder={key==="syllabus_url"?"https://...":undefined} min={key==="course"||key==="term_number"?1:undefined} max={key==="course"?6:key==="term_number"?2:key==="semester_number"?12:undefined} disabled={key==="course"&&!!record} value={value} onChange={(e)=>update(key,e.target.value)}/>}</label>;
+      return <label key={key}>{fieldLabels[key]}{key==="description"?<textarea maxLength={2000} rows={4} value={value} onChange={(e)=>update(key,e.target.value)} placeholder="Коротко про зміст і результати навчання"/>:key==="is_elective"||key==="is_current"?<input type="checkbox" checked={!!value} onChange={(e)=>update(key,e.target.checked)}/>:key==="group_id"?<select value={value} onChange={(e)=>update(key,Number(e.target.value))}>{db.groups.filter((group)=>group.status==="active"||group.group_id===Number(value)).map((g)=><option key={g.group_id} value={g.group_id}>{g.name}</option>)}</select>:key==="faculty"?<select value={page==="accounts"&&form.roles?.includes("student")?db.groups.find((group)=>group.group_id===Number(form.group_id))?.faculty||value:value} disabled={page==="accounts"&&form.roles?.includes("student")||db.me.role==="dean"} onChange={(e)=>update(key,e.target.value)}>{(db.me.role==="dean"?[db.me.faculty]:faculties).map((name)=><option key={name} value={name}>{name}</option>)}</select>:key==="status"?<select value={value} onChange={(e)=>update(key,e.target.value)}><option value="active">Активний</option><option value="inactive">Неактивний</option></select>:<input type={key==="syllabus_url"?"url":["credits","semester_number","capacity","course","admission_year","term_number"].includes(key)?"number":["start_date","end_date","enrollment_start","enrollment_deadline"].includes(key)?"date":"text"} maxLength={key==="syllabus_url"?2048:undefined} placeholder={key==="syllabus_url"?"https://...":undefined} min={key==="course"||key==="term_number"?1:undefined} max={key==="course"?6:key==="term_number"?2:key==="semester_number"?12:undefined} disabled={key==="course"&&!!record} value={value} onChange={(e)=>update(key,e.target.value)}/>}</label>;
     })}
     {page==="disciplines"&&!record&&<fieldset className="assignment-fieldset"><legend>Закріплення дисципліни</legend><p className="muted">Спочатку виберіть групу або потік. За курсом і роком вступу система запропонує відповідні півріччя та номер семестру.</p><label>Закріпити за<select value={form.assignment.target_type} onChange={(event)=>updateAssignment("target_type",event.target.value)}><option value="group">Групою</option><option value="stream">Потоком</option></select></label>{form.assignment.target_type==="group"?<label>Група<select value={form.assignment.group_id} onChange={(event)=>updateAssignment("group_id",Number(event.target.value))}>{db.groups.filter((group)=>group.status==="active").map((group)=><option key={group.group_id} value={group.group_id}>{group.name} · {group.course} курс · вступ {group.admission_year}</option>)}</select></label>:<label>Потік<select value={form.assignment.stream_id} onChange={(event)=>updateAssignment("stream_id",Number(event.target.value))}>{db.streams.filter((stream)=>stream.status==="active").map((stream)=><option key={stream.stream_id} value={stream.stream_id}>{stream.name}</option>)}</select></label>}<label>Викладач<select value={form.assignment.teacher_id} onChange={(event)=>updateAssignment("teacher_id",Number(event.target.value))}>{db.users.filter((user)=>user.roles?.includes("teacher")&&user.status==="active").map((user)=><option key={user.user_id} value={user.user_id}>{user.full_name}</option>)}</select></label><label>Півріччя для цієї групи<select value={selectedTeachingSemester?.semester_id||""} onChange={(event)=>updateAssignment("semester_id",Number(event.target.value))}>{eligibleSemesters.map((item)=><option key={item.semester_id} value={item.semester_id}>{item.term_number} півріччя · {item.academic_year}</option>)}</select></label><p className="muted">Номер семестру: <strong>{proposedSemesterNumber??"—"}</strong>. Він визначається автоматично для {targetGroup?.course||"обраного"} курсу.</p></fieldset>}
+    {page==="accounts"&&record&&db.me.role==="admin"&&<ReservePassword user={record}/>}
     {error&&<p className="error" role="alert">{error}</p>}<div className="modal-actions"><button type="button" onClick={onClose}>Скасувати</button><button className="primary" disabled={busy}>{busy?"Збереження…":"Зберегти"}</button></div>
   </form></Modal>;
 }
