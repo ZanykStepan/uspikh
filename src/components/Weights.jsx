@@ -6,13 +6,14 @@ export function WeightSummary({ db, assignment, studentId, onEdit, discipline })
   const result = studentId == null ? null : scoreBreakdown(db, assignment, studentId);
   const scheme = result?.scheme || weightScheme(db, assignment);
   const shown = lessonTypes.filter((type) => scheme?.weights[type] > 0);
+  const average = scheme?.method === "average";
   return <section className="panel weight-summary">
-    <div className="panel-head"><div><p className="eyebrow">ПРАВИЛА ОЦІНЮВАННЯ</p><h2>Ваги типів занять</h2></div><div className="weight-summary-actions">{result?.scheme && <strong className="weight-score">{String(result.semesterScore).replace(".", ",")} / 100</strong>}{onEdit && <button onClick={onEdit}>{scheme ? "Змінити ваги" : "Установити ваги"}</button>}</div></div>
+    <div className="panel-head"><div><p className="eyebrow">ПРАВИЛА ОЦІНЮВАННЯ</p><h2>{average ? "Метод розрахунку" : "Ваги типів занять"}</h2></div><div className="weight-summary-actions">{result?.scheme && <strong className="weight-score">{String(result.semesterScore).replace(".", ",")} / 100</strong>}{onEdit && <button onClick={onEdit}>{scheme ? "Змінити ваги" : "Установити ваги"}</button>}</div></div>
     {!scheme ? <p className="muted">Семестровий бал не обчислюється: викладач ще не встановив ваги.</p> : <>
-      <div className="weight-chips">{shown.map((type) => <span className="weight-chip" key={type}>{type} <strong>{scheme.weights[type]}%</strong></span>)}</div>
-      {result && <details className="weight-details"><summary>Як обчислено попередній бал</summary><p className="muted">Середнє внесених оцінок кожного типу переводиться у шкалу 0–100 та множиться на його вагу. Тип без оцінок дає 0. Проміжні значення округлено лише для показу.</p><div className="weight-grid">{shown.map((type) => {
+      <div className="weight-chips">{average ? <span className="weight-chip">Простий середній бал усіх оцінених занять</span> : shown.map((type) => <span className="weight-chip" key={type}>{type} <strong>{scheme.weights[type]}%</strong></span>)}</div>
+      {result && <details className="weight-details"><summary>Як обчислено попередній бал</summary><p className="muted">{average ? "Бал — середнє всіх внесених оцінок, переведених у шкалу 0–100. Ваги типів занять не використовуються." : "Середнє внесених оцінок кожного типу переводиться у шкалу 0–100 та множиться на його вагу. Тип без оцінок дає 0. Проміжні значення округлено лише для показу."}</p><div className="weight-grid">{(average ? lessonTypes.filter((t) => result?.types.find((row) => row.type === t)?.count) : shown).map((type) => {
         const item = result?.types.find((row) => row.type === type);
-        return <div className="weight-item" key={type}><strong>{type}</strong>{item && <small>{item.count ? `Середнє ${item.mean} · внесок ${item.contribution}` : "Оцінок немає · внесок 0"}</small>}</div>;
+        return <div className="weight-item" key={type}><strong>{type}</strong>{item && <small>{average ? `Середнє ${item.mean} · оцінок ${item.count}` : item.count ? `Середнє ${item.mean} · внесок ${item.contribution}` : "Оцінок немає · внесок 0"}</small>}</div>;
       })}</div></details>}
     </>}
     {discipline && <div className="weight-discipline"><h3>Про дисципліну</h3><p>{discipline.description?.trim() || "Опис ще не додано. Його може заповнити викладач дисципліни."}</p>{discipline.syllabus_url && <a href={discipline.syllabus_url} target="_blank" rel="noopener noreferrer">Відкрити силабус ↗</a>}</div>}
