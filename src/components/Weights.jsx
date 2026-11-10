@@ -22,18 +22,20 @@ export function WeightSummary({ db, assignment, studentId, onEdit, discipline })
 export function WeightEditor({ db, assignment, busy, serverError, onClose, onSave }) {
   const scheme = weightScheme(db, assignment);
   const [weights, setWeights] = useState(Object.fromEntries(lessonTypes.map((type) => [type, scheme?.weights[type] ?? 0])));
+  const [method, setMethod] = useState(scheme?.method || "weighted");
   const [error, setError] = useState("");
   const sum = Object.values(weights).reduce((total, value) => total + Number(value || 0), 0);
   const course = assignment.course_at_assignment;
   return <Modal title="Ваги оцінювання" className="weight-dialog" onClose={onClose} busy={busy}><form onSubmit={async (event) => {
     event.preventDefault();
     const clean = Object.fromEntries(lessonTypes.map((type) => [type, Number(weights[type])]));
-    if (Object.values(clean).some((value) => !Number.isInteger(value) || value < 0 || value > 100) || sum !== 100) { setError("Установіть цілі ваги від 0 до 100. Сума має дорівнювати 100%."); return; }
-    const ok = await onSave({ discipline_id: assignment.discipline_id, semester_id: assignment.semester_id, course, weights: clean });
+    if (method === "weighted" && (Object.values(clean).some((value) => !Number.isInteger(value) || value < 0 || value > 100) || sum !== 100)) { setError("Установіть цілі ваги від 0 до 100. Сума має дорівнювати 100%."); return; }
+    const ok = await onSave({ discipline_id: assignment.discipline_id, semester_id: assignment.semester_id, course, method, weights: clean });
     if (!ok) setError("");
   }}><p className="muted">До завершення семестру ваги можна змінювати. Нові ваги одразу перерахують попередній бал усіх студентів цієї дисципліни й курсу.</p>
-    <div className="weight-fields">{lessonTypes.map((type) => <label key={type}>{type}<input type="number" min="0" max="100" step="1" value={weights[type]} onChange={(event) => setWeights((current) => ({ ...current, [type]: event.target.value }))}/><span>%</span></label>)}</div>
-    <p className={sum === 100 ? "sum-valid" : "error"}>Разом: {sum}% із 100%</p>
+    <label>Метод розрахунку<select value={method} onChange={(event) => setMethod(event.target.value)}><option value="weighted">За вагами типів занять</option><option value="average">Простий середній бал усіх занять</option></select></label>
+    {method === "weighted" && <><div className="weight-fields">{lessonTypes.map((type) => <label key={type}>{type}<input type="number" min="0" max="100" step="1" value={weights[type]} onChange={(event) => setWeights((current) => ({ ...current, [type]: event.target.value }))}/><span>%</span></label>)}</div>
+    <p className={sum === 100 ? "sum-valid" : "error"}>Разом: {sum}% із 100%</p></>}
     {(error || serverError) && <p className="error" role="alert">{error || serverError}</p>}
     <div className="modal-actions"><button type="button" onClick={onClose}>Скасувати</button><button className="primary" disabled={busy}>{busy ? "Збереження…" : "Зберегти ваги"}</button></div>
   </form></Modal>;

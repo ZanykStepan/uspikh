@@ -1,4 +1,6 @@
 import { bootstrapFilters } from "../repositories/bootstrapScope.js";
+import { PHASE } from "../events/publisher.js";
+import { RealtimeObserver } from "../events/observers/realtimeObserver.js";
 import { UnitOfWork } from "../repositories/unitOfWork.js";
 import { createContext } from "../services/domainContext.js";
 import { fail } from "../utils/httpError.js";
@@ -20,8 +22,11 @@ async function reconcileIfNeeded(deps) {
   if (deps.state.reconciledOn === today) return;
   const uow = await UnitOfWork.begin(deps.pool, { write: true });
   try {
-    createContext(uow.db, { currentDate: deps.today, actor: null }).reconcileDebts();
+    const ctx = createContext(uow.db, { currentDate: deps.today, actor: null });
+    ctx.events.subscribe(new RealtimeObserver(deps.bus), { phase: PHASE.AFTER_COMMIT });
+    ctx.reconcileDebts();
     await uow.commit();
+    await ctx.events.dispatchAfterCommit(console);
     deps.state.reconciledOn = today;
   } catch (error) {
     await uow.rollback().catch(() => {});
@@ -45,6 +50,7 @@ export function transactional(handler, { write = true, scoped = false } = {}) {
     try {
       const actor = resolveActor(uow.db, req, deps);
       const ctx = createContext(uow.db, { currentDate: deps.today, actor });
+      ctx.events.subscribe(new RealtimeObserver(deps.bus), { phase: PHASE.AFTER_COMMIT });
       if (actor.role === "student" && isArchivedStudent(actor.student_status) && req.method !== "GET")
         fail(403, "Архівний профіль доступний лише для перегляду.");
       if (write && deps.state.reconciledOn !== deps.today()) ctx.reconcileDebts();
@@ -64,10 +70,9 @@ export function transactional(handler, { write = true, scoped = false } = {}) {
         return res.status(result.status).json(result.data);
       }
       if (write && result.status < 400) ctx.reconcileDebts();
-      const created = uow.write ? uow.db.notifications.filter((item) => !uow.before.notifications.has(item.notification_id)) : [];
       await uow.commit();
       if (uow.write) {
-        for (const item of created) await deps.bus.publish(item.user_id, item).catch(() => {});
+        await ctx.events.dispatchAfterCommit(console);
         if (resource === "notifications") await deps.bus.invalidate(actor.user_id).catch(() => {});
       }
       if (write) deps.state.reconciledOn = deps.today();

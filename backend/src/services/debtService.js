@@ -1,6 +1,6 @@
-import { formatDate } from "../domain/validators.js";
+import { DebtLifecycle } from "../domain/states/debt.js";
 export function updateDebt(c) {
-  const { db, actor, body, recordId, fail, id, audit, userFaculty, isDate, debtCriteria } = c;
+  const { db, actor, body, recordId, fail, events, userFaculty, isDate, debtCriteria } = c;
   const row = db.debts.find((x) => x.debt_id === recordId);
   if (!row) fail(404, "Заборгованість не знайдено.");
   if (actor.role !== "dean" || userFaculty(db.users.find((user) => user.user_id === row.student_id)) !== actor.faculty)
@@ -10,8 +10,11 @@ export function updateDebt(c) {
     const semester = db.semesters.find((item) => item.semester_id === row.semester_id);
     if (!isDate(nextDeadline) || nextDeadline <= semester.end_date) fail(422, "Термін ліквідації має бути після завершення семестру.");
   }
+  let closed = false;
   if (Object.hasOwn(body, "status")) {
-    if (body.status !== "closed" || row.status !== "open") fail(422, "Деканат може закрити лише відкритий борг.");
+    if (body.status !== "closed") fail(422, "Деканат може закрити лише відкритий борг.");
+    const lifecycle = new DebtLifecycle(row);
+    lifecycle.assertCanClose();
     const assignment = db.teaching_assignments.find(
       (item) =>
         item.discipline_id === row.discipline_id &&
@@ -20,26 +23,11 @@ export function updateDebt(c) {
     );
     if (!assignment || !nextDeadline || debtCriteria(assignment, row.student_id).needsDebt)
       fail(409, "Борг можна закрити після встановлення терміну, бала не нижче 50 і оцінки обов’язкового екзамену.");
-    row.status = "closed";
-    row.closed_at = new Date().toISOString();
-    db.notifications.push({
-      notification_id: id("notifications", "notification_id"),
-      user_id: row.student_id,
-      message: "Академічну заборгованість ліквідовано.",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    });
+    lifecycle.close();
+    closed = true;
   }
-  if (Object.hasOwn(body, "deadline")) {
-    row.deadline = nextDeadline;
-    db.notifications.push({
-      notification_id: id("notifications", "notification_id"),
-      user_id: row.student_id,
-      message: `Термін ліквідації заборгованості: ${formatDate(row.deadline)}.`,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    });
-  }
-  audit(actor, "debt.update", `debt:${recordId}`, `${row.status}; термін ${row.deadline ? formatDate(row.deadline) : "не встановлено"}`);
+  const deadlineSet = Object.hasOwn(body, "deadline");
+  if (deadlineSet) row.deadline = nextDeadline;
+  events.publish({ type: "debt.updated", actor, debt: row, closed, deadlineSet });
   return { status: 200, data: row };
 }

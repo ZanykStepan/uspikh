@@ -1,8 +1,9 @@
+import { EnrollmentLifecycle } from "../domain/states/enrollment.js";
 import { isArchivedStudent } from "../domain/validators.js";
 import { semesterNumber } from "../domain/academic.js";
 
 export function applyForElective(c) {
-  const { db, actor, body, resource, currentDate, fail, id, audit, electiveLimitsFor, electiveUsage } = c;
+  const { db, actor, body, resource, currentDate, fail, id, events, electiveLimitsFor, electiveUsage } = c;
   if (actor.role !== "student") fail(403, "Заявку подає студент.");
   if (isArchivedStudent(actor.student_status) || db.groups.find((group) => group.group_id === actor.group_id)?.status !== "active")
     fail(403, "Запис доступний лише студентам активних груп.");
@@ -28,7 +29,7 @@ export function applyForElective(c) {
   const previousRequest = db.elective_enrollments.find(
     (e) => e.student_id === actor.user_id && e.discipline_id === d.discipline_id && e.semester_id === s.semester_id,
   );
-  if (previousRequest && previousRequest.status !== "rejected") fail(409, "Заявку вже подано.");
+  if (previousRequest && !new EnrollmentLifecycle(previousRequest).canReapply) fail(409, "Заявку вже подано.");
   const limits = electiveLimitsFor(actor.group_id),
     usage = electiveUsage(actor.user_id);
   if (usage.total >= limits.max_disciplines) fail(409, `Досягнуто загальний ліміт вибіркових дисциплін: ${limits.max_disciplines}.`);
@@ -52,39 +53,30 @@ export function applyForElective(c) {
     enrolled_at: new Date().toISOString(),
   };
   db[resource].push(row);
-  audit(actor, "elective.apply", `enrollment:${row.enrollment_id}`, d.name);
+  events.publish({ type: "elective.applied", actor, enrollment: row, discipline: d });
   return { status: 201, data: row };
 }
 
 export function cancelElectiveRequest(c) {
-  const { db, actor, recordId, resource, fail, audit, userFaculty } = c;
+  const { db, actor, recordId, resource, fail, events, userFaculty } = c;
   if (isArchivedStudent(actor.student_status)) fail(403, "Архівний профіль доступний лише для перегляду.");
   const row = db[resource].find((x) => x.enrollment_id === recordId);
   if (!row) fail(404, "Заявку не знайдено.");
   if (userFaculty(db.users.find((u) => u.user_id === row.student_id)) !== actor.faculty) fail(403, "Заявка належить іншому факультету.");
-  if (row.student_id !== actor.user_id || row.status !== "pending") fail(403, "Можна скасувати лише власну заявку, що очікує розгляду.");
+  if (row.student_id !== actor.user_id) fail(403, "Можна скасувати лише власну заявку, що очікує розгляду.");
+  new EnrollmentLifecycle(row).cancel();
   db[resource] = db[resource].filter((x) => x.enrollment_id !== recordId);
-  audit(actor, "elective.cancel", `enrollment:${recordId}`, "");
+  events.publish({ type: "elective.cancelled", actor, enrollmentId: recordId });
   return { status: 200, data: { message: "Заявку скасовано." } };
 }
 
 export function reviewElectiveRequest(c) {
-  const { db, actor, body, recordId, resource, fail, id, audit, userFaculty, assignmentGroupIds } = c;
+  const { db, actor, body, recordId, resource, fail, id, events, userFaculty, assignmentGroupIds } = c;
   if (actor.role !== "dean") fail(403, "Недостатньо прав.");
   const row = db[resource].find((x) => x.enrollment_id === recordId);
   if (!row) fail(404, "Заявку не знайдено.");
   if (userFaculty(db.users.find((u) => u.user_id === row.student_id)) !== actor.faculty) fail(403, "Заявка належить іншому факультету.");
-  if (!["approved", "rejected"].includes(body.status)) fail(422, "Некоректний статус.");
-  const statusChanged = row.status !== body.status;
-  row.status = body.status;
-  if (statusChanged)
-    db.notifications.push({
-      notification_id: id("notifications", "notification_id"),
-      user_id: row.student_id,
-      message: `Заявку на вибіркову дисципліну «${db.disciplines.find((item) => item.discipline_id === row.discipline_id)?.name || ""}» ${row.status === "approved" ? "підтверджено" : "відхилено"} деканатом.`,
-      is_read: false,
-      created_at: new Date().toISOString(),
-    });
+  const statusChanged = new EnrollmentLifecycle(row).review(body.status);
   if (row.status === "approved")
     for (const assignment of db.teaching_assignments.filter(
       (a) =>
@@ -108,12 +100,18 @@ export function reviewElectiveRequest(c) {
             reason: null,
           });
     }
-  audit(actor, "elective." + body.status, `enrollment:${recordId}`, "");
+  events.publish({
+    type: "elective.reviewed",
+    actor,
+    enrollment: row,
+    statusChanged,
+    discipline: db.disciplines.find((item) => item.discipline_id === row.discipline_id),
+  });
   return { status: 200, data: row };
 }
 
 export function saveElectiveLimits(c) {
-  const { db, actor, body, fail, id, audit } = c;
+  const { db, actor, body, fail, id, events } = c;
   if (!["admin", "dean"].includes(actor.role)) fail(403, "Ліміти вибіркових задає деканат або адміністратор.");
   const group = db.groups.find((item) => item.group_id === Number(body.group_id) && item.status === "active");
   if (!group) fail(422, "Оберіть активну групу.");
@@ -135,11 +133,6 @@ export function saveElectiveLimits(c) {
     row = { limit_id: id("elective_limits", "limit_id"), group_id: group.group_id, ...limits, ...stamp };
     db.elective_limits.push(row);
   }
-  audit(
-    actor,
-    "elective_limits.save",
-    `group:${group.group_id}`,
-    `1 каталог ${limits.catalog1_credits} кр.; 2 каталог ${limits.catalog2_credits} кр.; усього дисциплін ${limits.max_disciplines}`,
-  );
+  events.publish({ type: "elective.limits.saved", actor, group, limits });
   return { status: 200, data: row };
 }

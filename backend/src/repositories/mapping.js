@@ -123,7 +123,7 @@ export const ENTITIES = [
   {
     name: "weight_schemes",
     pk: "scheme_id",
-    columns: ["scheme_id", "discipline_id", "course", "semester_id", "updated_by", "updated_at"],
+    columns: ["scheme_id", "discipline_id", "course", "semester_id", "method", "updated_by", "updated_at"],
     links: [
       {
         table: "weight_scheme_items",

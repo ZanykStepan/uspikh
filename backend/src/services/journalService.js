@@ -1,3 +1,5 @@
+import { CorrectionRequestLifecycle } from "../domain/states/correctionRequest.js";
+import { gradingMethods } from "../../../shared/grading.mjs";
 import { lessonTypes, defaultScale } from "../domain/academic.js";
 
 export function updateDisciplineDetails(c) {
@@ -30,16 +32,18 @@ export function saveWeightScheme(c) {
   )
     fail(403, "Дисципліна й курс не закріплені за викладачем.");
   if (completed(semesterId)) fail(409, "Семестр завершено. Ваги заблоковані для звичайного редагування.");
-  const types = lessonTypes;
+  const method = body.method ?? "weighted";
+  if (!gradingMethods.includes(method)) fail(422, "Оберіть метод розрахунку: за вагами або простий середній бал.");
   const weights = {};
-  for (const type of types) {
-    const value = body.weights?.[type];
+  for (const type of lessonTypes) {
+    const value = method === "weighted" ? body.weights?.[type] : 0;
     if (!Number.isInteger(value) || value < 0 || value > 100) fail(422, "Введіть цілі ваги від 0 до 100 для кожного типу занять.");
     weights[type] = value;
   }
-  if (Object.values(weights).reduce((sum, value) => sum + value, 0) !== 100) fail(422, "Сума ваг має дорівнювати 100%.");
+  if (method === "weighted" && Object.values(weights).reduce((sum, value) => sum + value, 0) !== 100)
+    fail(422, "Сума ваг має дорівнювати 100%.");
   let row = db.weight_schemes.find((w) => w.discipline_id === disciplineId && w.course === course && w.semester_id === semesterId);
-  if (row) Object.assign(row, { weights, updated_by: actor.user_id, updated_at: new Date().toISOString() });
+  if (row) Object.assign(row, { weights, method, updated_by: actor.user_id, updated_at: new Date().toISOString() });
   else {
     row = {
       scheme_id: id("weight_schemes", "scheme_id"),
@@ -47,6 +51,7 @@ export function saveWeightScheme(c) {
       course,
       semester_id: semesterId,
       weights,
+      method,
       updated_by: actor.user_id,
       updated_at: new Date().toISOString(),
     };
@@ -131,7 +136,7 @@ export function createLesson(c) {
 }
 
 export function saveGrade(c) {
-  const { db, actor, body, recordId, req, fail, id, audit, hasRole, completed, eligibleForAssignment, canLesson } = c;
+  const { db, actor, body, recordId, req, fail, id, events, hasRole, completed, eligibleForAssignment, canLesson } = c;
   const previous = req.method === "PATCH" ? db.grades.find((x) => x.grade_id === recordId) : null;
   if (req.method === "PATCH" && !previous) fail(404, "Оцінку не знайдено.");
   const lessonId = previous?.lesson_id ?? Number(body.lesson_id),
@@ -157,8 +162,8 @@ export function saveGrade(c) {
   if (!previous && db.grades.some((g) => g.student_id === studentId && g.lesson_id === lessonId))
     fail(409, "Оцінка вже існує. Відредагуйте наявний запис.");
   const now = new Date().toISOString();
+  let grade = previous;
   if (previous) {
-    const oldValue = previous.value;
     db.grade_history.push({
       history_id: id("grade_history", "history_id"),
       grade_id: previous.grade_id,
@@ -168,11 +173,13 @@ export function saveGrade(c) {
       changed_at: now,
       reason: body.reason.trim(),
     });
+  }
+  const previousState = previous ? { value: previous.value } : null;
+  if (previous) {
     previous.value = body.value;
     previous.updated_at = now;
-    audit(actor, "grade.update", `grade:${previous.grade_id}`, `${oldValue} → ${body.value}; причина: ${body.reason.trim()}`);
-  } else
-    db.grades.push({
+  } else {
+    grade = {
       grade_id: id("grades", "grade_id"),
       student_id: studentId,
       lesson_id: lessonId,
@@ -180,20 +187,25 @@ export function saveGrade(c) {
       recorded_by: actor.user_id,
       given_at: now,
       updated_at: now,
-    });
-  if (!previous) audit(actor, "grade.create", `lesson:${lessonId};student:${studentId}`, `${body.value} балів`);
-  db.notifications.push({
-    notification_id: id("notifications", "notification_id"),
-    user_id: studentId,
-    message: `Нову оцінку ${body.value} внесено до журналу.`,
-    is_read: false,
-    created_at: now,
+    };
+    db.grades.push(grade);
+  }
+  events.publish({
+    type: "grade.saved",
+    at: now,
+    actor,
+    gradeId: grade.grade_id,
+    studentId,
+    lessonId,
+    value: body.value,
+    previous: previousState,
+    reason: previous ? body.reason.trim() : null,
   });
   return { status: previous ? 200 : 201, data: { message: "Оцінку збережено." } };
 }
 
 export function requestGradeCorrection(c) {
-  const { db, actor, body, fail, id, audit, completed, eligibleForAssignment } = c;
+  const { db, actor, body, fail, id, events, completed, eligibleForAssignment } = c;
   if (actor.role !== "teacher") fail(403, "Запит на виправлення подає викладач.");
   const lesson = db.lessons.find((item) => item.lesson_id === Number(body.lesson_id));
   const assignment = db.teaching_assignments.find(
@@ -231,19 +243,19 @@ export function requestGradeCorrection(c) {
     status: "pending",
   };
   db.grade_correction_requests.push(row);
-  audit(actor, "grade_correction.request", `request:${row.request_id}`, `${row.previous_value ?? "—"} → ${row.proposed_value}; ${reason}`);
+  events.publish({ type: "correction.requested", actor, request: row });
   return { status: 201, data: row };
 }
 
 export function reviewGradeCorrection(c) {
-  const { db, actor, body, recordId, fail, id, audit, userFaculty, reconcileDebts } = c;
+  const { db, actor, body, recordId, fail, id, events, userFaculty, reconcileDebts } = c;
   if (actor.role !== "dean") fail(403, "Запит розглядає деканат.");
   const row = db.grade_correction_requests.find((request) => request.request_id === recordId);
   if (!row) fail(404, "Запит не знайдено.");
   if (userFaculty(db.users.find((user) => user.user_id === row.student_id)) !== actor.faculty)
     fail(403, "Студент належить іншому факультету.");
-  if (row.status !== "pending" || !["approved", "rejected"].includes(body.status))
-    fail(422, "Можна затвердити або відхилити лише запит на розгляді.");
+  const lifecycle = new CorrectionRequestLifecycle(row);
+  lifecycle.review(body.status);
   if (body.status === "approved") {
     const existing = db.grades.find((grade) => grade.lesson_id === row.lesson_id && grade.student_id === row.student_id);
     if ((existing?.value ?? null) !== row.previous_value) fail(409, "Оцінка змінилася після подання запиту. Потрібен новий запит.");
@@ -272,29 +284,16 @@ export function reviewGradeCorrection(c) {
         given_at: now,
         updated_at: now,
       });
-    db.notifications.push({
-      notification_id: id("notifications", "notification_id"),
-      user_id: row.student_id,
-      message: `Деканат погодив виправлення оцінки: ${row.proposed_value}.`,
-      is_read: false,
-      created_at: now,
-    });
   }
-  row.status = body.status;
   row.reviewed_by = actor.user_id;
   row.reviewed_at = new Date().toISOString();
-  audit(
-    actor,
-    `grade_correction.${body.status}`,
-    `request:${row.request_id}`,
-    `${row.previous_value ?? "—"} → ${row.proposed_value}; ${row.reason}`,
-  );
+  events.publish({ type: "correction.reviewed", actor, request: row });
   reconcileDebts();
   return { status: 200, data: row };
 }
 
 export function updateAttendance(c) {
-  const { db, actor, body, recordId, fail, id, audit, completed, canLesson } = c;
+  const { db, actor, body, recordId, fail, events, completed, canLesson } = c;
   const row = db.attendance.find((x) => x.attendance_id === recordId);
   if (!row) fail(404, "Запис не знайдено.");
   if (!canLesson(row.lesson_id)) fail(403, "Немає права редагувати відвідуваність.");
@@ -313,15 +312,7 @@ export function updateAttendance(c) {
     status: body.status,
     reason: body.status === "present" ? null : body.reason,
   });
-  audit(actor, "attendance.update", `attendance:${recordId}`, `${row.status}${row.reason ? ": " + row.reason : ""}`);
-  if (changed && row.status === "absent")
-    db.notifications.push({
-      notification_id: id("notifications", "notification_id"),
-      user_id: row.student_id,
-      message: "У журналі відмічено пропуск заняття (" + row.reason + ").",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    });
+  events.publish({ type: "attendance.marked", actor, record: row, changed });
   return { status: 200, data: row };
 }
 

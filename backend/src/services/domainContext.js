@@ -1,6 +1,10 @@
 import { lessonTypes, legacyLessonTypes, defaultScale, faculties, semesterNumber } from "../domain/academic.js";
 import { scoreBreakdown } from "../domain/scoring.js";
 import { fail } from "../utils/httpError.js";
+import { DebtLifecycle } from "../domain/states/debt.js";
+import { DomainEventPublisher } from "../events/publisher.js";
+import { AuditObserver } from "../events/observers/auditObserver.js";
+import { NotificationObserver } from "../events/observers/notificationObserver.js";
 import { isValidCalendarDate, isArchivedStudent, completionKind, formatDate } from "../domain/validators.js";
 
 export const roles = ["student", "teacher", "curator", "dean", "admin"];
@@ -72,6 +76,9 @@ export function createContext(db, { currentDate, actor }) {
       faculty: (actor.role === "admin" ? targetFaculty(target) : userFaculty(actor)) ?? null,
     });
   };
+  const events = new DomainEventPublisher();
+  events.subscribe(new AuditObserver(audit));
+  events.subscribe(new NotificationObserver(db, id));
   const assignmentGroupIds = (assignment) =>
     assignment.roster_group_ids ||
     (assignment.stream_id
@@ -143,19 +150,10 @@ export function createContext(db, { currentDate, actor }) {
             created_at: new Date().toISOString(),
           };
           db.debts.push(debt);
-          db.notifications.push({
-            notification_id: id("notifications", "notification_id"),
-            user_id: studentId,
-            message: `Виникла академічна заборгованість: ${criteria.reason}. Термін ліквідації встановить деканат.`,
-            is_read: false,
-            created_at: new Date().toISOString(),
-          });
+          events.publish({ type: "debt.created", debt, reason: criteria.reason });
           changed = true;
         } else if (row.status === "closed" || row.reason !== criteria.reason) {
-          if (row.status === "closed") {
-            row.status = "open";
-            row.deadline = null;
-          }
+          if (row.status === "closed") new DebtLifecycle(row).reopen();
           row.reason = criteria.reason;
           changed = true;
         }
@@ -304,6 +302,7 @@ export function createContext(db, { currentDate, actor }) {
   return {
     db,
     actor,
+    events,
     currentDate,
     fail,
     id,

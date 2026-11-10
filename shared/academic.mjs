@@ -34,12 +34,4 @@ export const faculties = [
 
 export const semesterNumber = (course, term) => (course - 1) * 2 + term;
 
-// Демонстраційна шкала. У продукційній системі її затверджують і версіонують окремо.
-export function convertSemesterScore(score) {
-  if (score == null) return null;
-  const bounded = Math.max(0, Math.min(100, score));
-  const five = bounded >= 90 ? 5 : bounded >= 75 ? 4 : bounded >= 50 ? 3 : bounded >= 35 ? 2 : 1;
-  const twelve = Math.round(bounded * 12 / 100);
-  const ects = bounded >= 90 ? "A" : bounded >= 82 ? "B" : bounded >= 75 ? "C" : bounded >= 68 ? "D" : bounded >= 50 ? "E" : bounded >= 35 ? "FX" : "F";
-  return { five, twelve, ects };
-}
+export { convertSemesterScore } from "./scales.mjs";

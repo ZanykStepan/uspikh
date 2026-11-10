@@ -1,5 +1,6 @@
 import { lessonTypes } from "../shared/academic.mjs";
 export { lessonTypes, gradeScales, defaultScale, faculties, normalizedGrade, semesterNumber, convertSemesterScore } from "../shared/academic.mjs";
+export { assignmentGroupIds, weightScheme, scoreBreakdown, GradeCalculator, gradingStrategies } from "../shared/grading.mjs";
 
 let todayOverride = null;
 // Сервер повідомляє «поточну» дату (у демонстраційному режимі вона може бути вигаданою).
@@ -10,37 +11,6 @@ export const average = (values) =>
   values.length
     ? Math.round((values.reduce((s, x) => s + x, 0) / values.length) * 10) / 10
     : null;
-export function assignmentGroupIds(db, assignment) {
-  if (!assignment) return [];
-  return assignment.roster_group_ids || (assignment.stream_id
-    ? db.streams.find((stream) => stream.stream_id === assignment.stream_id)?.group_ids || []
-    : assignment.group_id ? [assignment.group_id] : []);
-}
-export function weightScheme(db, assignment) {
-  if (!assignment) return null;
-  const groupId = assignmentGroupIds(db, assignment)[0];
-  const course = assignment.course_at_assignment || db.groups.find((group) => group.group_id === groupId)?.course;
-  return db.weight_schemes?.find((scheme) => scheme.discipline_id === assignment.discipline_id && scheme.course === course && scheme.semester_id === assignment.semester_id) || null;
-}
-export function scoreBreakdown(db, assignment, studentId) {
-  const scheme = weightScheme(db, assignment);
-  const studentGroupId = Number(assignment?.student_group_ids?.[studentId]);
-  const lessons = db.lessons.filter((lesson) => lesson.assignment_id === assignment?.assignment_id && (!lesson.group_id || lesson.group_id === studentGroupId));
-  const types = lessonTypes.map((type) => {
-    const values = lessons.filter((lesson) => lesson.lesson_type === type)
-      .map((lesson) => {
-        const grade = db.grades.find((item) => item.student_id === studentId && item.lesson_id === lesson.lesson_id);
-        const maximum = lesson.max_score || 100;
-        return grade && Number.isInteger(grade.value) && grade.value >= 0 && grade.value <= maximum && maximum > 0 ? grade.value / maximum * 100 : null;
-      })
-      .filter((value) => value != null);
-    const rawMean = values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
-    const mean = values.length ? Math.round(rawMean * 10) / 10 : null;
-    const weight = scheme?.weights[type] ?? null;
-    return { type, mean, count: values.length, weight, contribution: weight === null ? null : Math.round(rawMean * weight / 10) / 10, rawContribution: weight === null ? null : rawMean * weight / 100 };
-  });
-  return { scheme, types, gradedCount: types.reduce((sum, row) => sum + row.count, 0), semesterScore: scheme ? Math.min(100, Math.round(types.reduce((sum, row) => sum + row.rawContribution, 0) * 10) / 10) : null };
-}
 export function semesterLessons(db, semester) {
   const ids = db.teaching_assignments
     .filter((a) => a.semester_id === Number(semester))
