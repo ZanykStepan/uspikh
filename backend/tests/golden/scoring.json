@@ -1,0 +1,1339 @@
+{
+  "scores": [
+    {
+      "assignment": 1,
+      "student": 1,
+      "semesterScore": 90.7,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 92.5,
+          "count": 2,
+          "weight": 60,
+          "contribution": 55.5
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 88,
+          "count": 1,
+          "weight": 40,
+          "contribution": 35.2
+        }
+      ]
+    },
+    {
+      "assignment": 1,
+      "student": 2,
+      "semesterScore": 83.7,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 85.5,
+          "count": 2,
+          "weight": 60,
+          "contribution": 51.3
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 81,
+          "count": 1,
+          "weight": 40,
+          "contribution": 32.4
+        }
+      ]
+    },
+    {
+      "assignment": 1,
+      "student": 3,
+      "semesterScore": 76.7,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 78.5,
+          "count": 2,
+          "weight": 60,
+          "contribution": 47.1
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 74,
+          "count": 1,
+          "weight": 40,
+          "contribution": 29.6
+        }
+      ]
+    },
+    {
+      "assignment": 1,
+      "student": 4,
+      "semesterScore": 0,
+      "gradedCount": 0,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 60,
+          "contribution": 0
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 40,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 1,
+      "student": 5,
+      "semesterScore": 0,
+      "gradedCount": 0,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 60,
+          "contribution": 0
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 40,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 2,
+      "student": 1,
+      "semesterScore": 84.5,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 84.5,
+          "count": 2,
+          "weight": 100,
+          "contribution": 84.5
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 91,
+          "count": 1,
+          "weight": 0,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 2,
+      "student": 2,
+      "semesterScore": 77.5,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 77.5,
+          "count": 2,
+          "weight": 100,
+          "contribution": 77.5
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 84,
+          "count": 1,
+          "weight": 0,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 2,
+      "student": 3,
+      "semesterScore": 70.5,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 70.5,
+          "count": 2,
+          "weight": 100,
+          "contribution": 70.5
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 77,
+          "count": 1,
+          "weight": 0,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 2,
+      "student": 4,
+      "semesterScore": 0,
+      "gradedCount": 0,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 100,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 2,
+      "student": 5,
+      "semesterScore": 0,
+      "gradedCount": 0,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 100,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 3,
+      "student": 1,
+      "semesterScore": 80.1,
+      "gradedCount": 4,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 81,
+          "count": 2,
+          "weight": 30,
+          "contribution": 24.3
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 86,
+          "count": 1,
+          "weight": 30,
+          "contribution": 25.8
+        },
+        {
+          "type": "Екзамен",
+          "mean": 75,
+          "count": 1,
+          "weight": 40,
+          "contribution": 30
+        }
+      ]
+    },
+    {
+      "assignment": 3,
+      "student": 2,
+      "semesterScore": 85.9,
+      "gradedCount": 4,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 74,
+          "count": 2,
+          "weight": 30,
+          "contribution": 22.2
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 79,
+          "count": 1,
+          "weight": 30,
+          "contribution": 23.7
+        },
+        {
+          "type": "Екзамен",
+          "mean": 100,
+          "count": 1,
+          "weight": 40,
+          "contribution": 40
+        }
+      ]
+    },
+    {
+      "assignment": 3,
+      "student": 3,
+      "semesterScore": 41.7,
+      "gradedCount": 3,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 67,
+          "count": 2,
+          "weight": 30,
+          "contribution": 20.1
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 72,
+          "count": 1,
+          "weight": 30,
+          "contribution": 21.6
+        },
+        {
+          "type": "Екзамен",
+          "mean": null,
+          "count": 0,
+          "weight": 40,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 3,
+      "student": 4,
+      "semesterScore": 0,
+      "gradedCount": 0,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 30,
+          "contribution": 0
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 30,
+          "contribution": 0
+        },
+        {
+          "type": "Екзамен",
+          "mean": null,
+          "count": 0,
+          "weight": 40,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 3,
+      "student": 5,
+      "semesterScore": 0,
+      "gradedCount": 0,
+      "hasScheme": true,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 30,
+          "contribution": 0
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": null,
+          "count": 0,
+          "weight": 30,
+          "contribution": 0
+        },
+        {
+          "type": "Екзамен",
+          "mean": null,
+          "count": 0,
+          "weight": 40,
+          "contribution": 0
+        }
+      ]
+    },
+    {
+      "assignment": 4,
+      "student": 1,
+      "semesterScore": null,
+      "gradedCount": 3,
+      "hasScheme": false,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 88.5,
+          "count": 2,
+          "weight": null,
+          "contribution": null
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 94,
+          "count": 1,
+          "weight": null,
+          "contribution": null
+        }
+      ]
+    },
+    {
+      "assignment": 4,
+      "student": 2,
+      "semesterScore": null,
+      "gradedCount": 3,
+      "hasScheme": false,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 81.5,
+          "count": 2,
+          "weight": null,
+          "contribution": null
+        },
+        {
+          "type": "Контрольна / розрахунково-графічна робота",
+          "mean": 87,
+          "count": 1,
+          "weight": null,
+          "contribution": null
+        }
+      ]
+    },
+    {
+      "assignment": 4,
+      "student": 3,
+      "semesterScore": null,
+      "gradedCount": 2,
+      "hasScheme": false,
+      "types": [
+        {
+          "type": "Лабораторна робота",
+          "mean": 74.5,
+          "count": 2,
+          "weight": null,
+          "contribution": null
+        }
+      ]
+    },
+    {
+      "assignment": 4,
+      "student": 4,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 4,
+      "student": 5,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 5,
+      "student": 1,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 5,
+      "student": 2,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 5,
+      "student": 3,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 5,
+      "student": 4,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 5,
+      "student": 5,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 6,
+      "student": 1,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 6,
+      "student": 2,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 6,
+      "student": 3,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 6,
+      "student": 4,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    },
+    {
+      "assignment": 6,
+      "student": 5,
+      "semesterScore": null,
+      "gradedCount": 0,
+      "hasScheme": false,
+      "types": []
+    }
+  ],
+  "conversion": [
+    [
+      0,
+      {
+        "five": 1,
+        "twelve": 0,
+        "ects": "F"
+      }
+    ],
+    [
+      1,
+      {
+        "five": 1,
+        "twelve": 0,
+        "ects": "F"
+      }
+    ],
+    [
+      2,
+      {
+        "five": 1,
+        "twelve": 0,
+        "ects": "F"
+      }
+    ],
+    [
+      3,
+      {
+        "five": 1,
+        "twelve": 0,
+        "ects": "F"
+      }
+    ],
+    [
+      4,
+      {
+        "five": 1,
+        "twelve": 0,
+        "ects": "F"
+      }
+    ],
+    [
+      5,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      6,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      7,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      8,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      9,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      10,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      11,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      12,
+      {
+        "five": 1,
+        "twelve": 1,
+        "ects": "F"
+      }
+    ],
+    [
+      13,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      14,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      15,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      16,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      17,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      18,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      19,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      20,
+      {
+        "five": 1,
+        "twelve": 2,
+        "ects": "F"
+      }
+    ],
+    [
+      21,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      22,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      23,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      24,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      25,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      26,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      27,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      28,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      29,
+      {
+        "five": 1,
+        "twelve": 3,
+        "ects": "F"
+      }
+    ],
+    [
+      30,
+      {
+        "five": 1,
+        "twelve": 4,
+        "ects": "F"
+      }
+    ],
+    [
+      31,
+      {
+        "five": 1,
+        "twelve": 4,
+        "ects": "F"
+      }
+    ],
+    [
+      32,
+      {
+        "five": 1,
+        "twelve": 4,
+        "ects": "F"
+      }
+    ],
+    [
+      33,
+      {
+        "five": 1,
+        "twelve": 4,
+        "ects": "F"
+      }
+    ],
+    [
+      34,
+      {
+        "five": 1,
+        "twelve": 4,
+        "ects": "F"
+      }
+    ],
+    [
+      35,
+      {
+        "five": 2,
+        "twelve": 4,
+        "ects": "FX"
+      }
+    ],
+    [
+      36,
+      {
+        "five": 2,
+        "twelve": 4,
+        "ects": "FX"
+      }
+    ],
+    [
+      37,
+      {
+        "five": 2,
+        "twelve": 4,
+        "ects": "FX"
+      }
+    ],
+    [
+      38,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      39,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      40,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      41,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      42,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      43,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      44,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      45,
+      {
+        "five": 2,
+        "twelve": 5,
+        "ects": "FX"
+      }
+    ],
+    [
+      46,
+      {
+        "five": 2,
+        "twelve": 6,
+        "ects": "FX"
+      }
+    ],
+    [
+      47,
+      {
+        "five": 2,
+        "twelve": 6,
+        "ects": "FX"
+      }
+    ],
+    [
+      48,
+      {
+        "five": 2,
+        "twelve": 6,
+        "ects": "FX"
+      }
+    ],
+    [
+      49,
+      {
+        "five": 2,
+        "twelve": 6,
+        "ects": "FX"
+      }
+    ],
+    [
+      50,
+      {
+        "five": 3,
+        "twelve": 6,
+        "ects": "E"
+      }
+    ],
+    [
+      51,
+      {
+        "five": 3,
+        "twelve": 6,
+        "ects": "E"
+      }
+    ],
+    [
+      52,
+      {
+        "five": 3,
+        "twelve": 6,
+        "ects": "E"
+      }
+    ],
+    [
+      53,
+      {
+        "five": 3,
+        "twelve": 6,
+        "ects": "E"
+      }
+    ],
+    [
+      54,
+      {
+        "five": 3,
+        "twelve": 6,
+        "ects": "E"
+      }
+    ],
+    [
+      55,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      56,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      57,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      58,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      59,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      60,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      61,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      62,
+      {
+        "five": 3,
+        "twelve": 7,
+        "ects": "E"
+      }
+    ],
+    [
+      63,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "E"
+      }
+    ],
+    [
+      64,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "E"
+      }
+    ],
+    [
+      65,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "E"
+      }
+    ],
+    [
+      66,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "E"
+      }
+    ],
+    [
+      67,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "E"
+      }
+    ],
+    [
+      68,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "D"
+      }
+    ],
+    [
+      69,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "D"
+      }
+    ],
+    [
+      70,
+      {
+        "five": 3,
+        "twelve": 8,
+        "ects": "D"
+      }
+    ],
+    [
+      71,
+      {
+        "five": 3,
+        "twelve": 9,
+        "ects": "D"
+      }
+    ],
+    [
+      72,
+      {
+        "five": 3,
+        "twelve": 9,
+        "ects": "D"
+      }
+    ],
+    [
+      73,
+      {
+        "five": 3,
+        "twelve": 9,
+        "ects": "D"
+      }
+    ],
+    [
+      74,
+      {
+        "five": 3,
+        "twelve": 9,
+        "ects": "D"
+      }
+    ],
+    [
+      75,
+      {
+        "five": 4,
+        "twelve": 9,
+        "ects": "C"
+      }
+    ],
+    [
+      76,
+      {
+        "five": 4,
+        "twelve": 9,
+        "ects": "C"
+      }
+    ],
+    [
+      77,
+      {
+        "five": 4,
+        "twelve": 9,
+        "ects": "C"
+      }
+    ],
+    [
+      78,
+      {
+        "five": 4,
+        "twelve": 9,
+        "ects": "C"
+      }
+    ],
+    [
+      79,
+      {
+        "five": 4,
+        "twelve": 9,
+        "ects": "C"
+      }
+    ],
+    [
+      80,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "C"
+      }
+    ],
+    [
+      81,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "C"
+      }
+    ],
+    [
+      82,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "B"
+      }
+    ],
+    [
+      83,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "B"
+      }
+    ],
+    [
+      84,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "B"
+      }
+    ],
+    [
+      85,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "B"
+      }
+    ],
+    [
+      86,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "B"
+      }
+    ],
+    [
+      87,
+      {
+        "five": 4,
+        "twelve": 10,
+        "ects": "B"
+      }
+    ],
+    [
+      88,
+      {
+        "five": 4,
+        "twelve": 11,
+        "ects": "B"
+      }
+    ],
+    [
+      89,
+      {
+        "five": 4,
+        "twelve": 11,
+        "ects": "B"
+      }
+    ],
+    [
+      90,
+      {
+        "five": 5,
+        "twelve": 11,
+        "ects": "A"
+      }
+    ],
+    [
+      91,
+      {
+        "five": 5,
+        "twelve": 11,
+        "ects": "A"
+      }
+    ],
+    [
+      92,
+      {
+        "five": 5,
+        "twelve": 11,
+        "ects": "A"
+      }
+    ],
+    [
+      93,
+      {
+        "five": 5,
+        "twelve": 11,
+        "ects": "A"
+      }
+    ],
+    [
+      94,
+      {
+        "five": 5,
+        "twelve": 11,
+        "ects": "A"
+      }
+    ],
+    [
+      95,
+      {
+        "five": 5,
+        "twelve": 11,
+        "ects": "A"
+      }
+    ],
+    [
+      96,
+      {
+        "five": 5,
+        "twelve": 12,
+        "ects": "A"
+      }
+    ],
+    [
+      97,
+      {
+        "five": 5,
+        "twelve": 12,
+        "ects": "A"
+      }
+    ],
+    [
+      98,
+      {
+        "five": 5,
+        "twelve": 12,
+        "ects": "A"
+      }
+    ],
+    [
+      99,
+      {
+        "five": 5,
+        "twelve": 12,
+        "ects": "A"
+      }
+    ],
+    [
+      100,
+      {
+        "five": 5,
+        "twelve": 12,
+        "ects": "A"
+      }
+    ]
+  ],
+  "empty": null
+}

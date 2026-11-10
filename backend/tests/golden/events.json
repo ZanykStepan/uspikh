@@ -1,0 +1,324 @@
+{
+  "steps": [
+    {
+      "label": "оцінка створена",
+      "status": 201
+    },
+    {
+      "label": "оцінка виправлена",
+      "status": 200
+    },
+    {
+      "label": "пропуск",
+      "status": 200
+    },
+    {
+      "label": "пропуск повторно",
+      "status": 200
+    },
+    {
+      "label": "присутній",
+      "status": 200
+    },
+    {
+      "label": "заявка",
+      "status": 201
+    },
+    {
+      "label": "заявка підтверджена",
+      "status": 200
+    },
+    {
+      "label": "заявка підтверджена повторно",
+      "status": 200
+    },
+    {
+      "label": "заявка відхилена",
+      "status": 200
+    },
+    {
+      "label": "заявка некоректна",
+      "status": 422
+    },
+    {
+      "label": "заявка 2",
+      "status": 201
+    },
+    {
+      "label": "заявка скасована",
+      "status": 200
+    },
+    {
+      "label": "ліміти",
+      "status": 200
+    }
+  ],
+  "notifications": [
+    {
+      "user_id": 1,
+      "message": "Відкрито вибір дисциплін на 2 семестр.",
+      "is_read": false
+    },
+    {
+      "user_id": 3,
+      "message": "Нову оцінку 85 внесено до журналу.",
+      "is_read": false
+    },
+    {
+      "user_id": 1,
+      "message": "Нову оцінку 91 внесено до журналу.",
+      "is_read": false
+    },
+    {
+      "user_id": 1,
+      "message": "У журналі відмічено пропуск заняття (поважна).",
+      "is_read": false
+    },
+    {
+      "user_id": 1,
+      "message": "Заявку на вибіркову дисципліну «Проєктування інтерфейсів» підтверджено деканатом.",
+      "is_read": false
+    },
+    {
+      "user_id": 1,
+      "message": "Заявку на вибіркову дисципліну «Проєктування інтерфейсів» відхилено деканатом.",
+      "is_read": false
+    }
+  ],
+  "audit": [
+    {
+      "actor_id": 7,
+      "action": "grade.create",
+      "target": "lesson:12;student:3",
+      "detail": "85 балів"
+    },
+    {
+      "actor_id": 7,
+      "action": "grade.update",
+      "target": "grade:1",
+      "detail": "90 → 91; причина: Виправлення помилки"
+    },
+    {
+      "actor_id": 7,
+      "action": "attendance.update",
+      "target": "attendance:1",
+      "detail": "absent: поважна"
+    },
+    {
+      "actor_id": 7,
+      "action": "attendance.update",
+      "target": "attendance:1",
+      "detail": "absent: поважна"
+    },
+    {
+      "actor_id": 7,
+      "action": "attendance.update",
+      "target": "attendance:1",
+      "detail": "present"
+    },
+    {
+      "actor_id": 1,
+      "action": "elective.apply",
+      "target": "enrollment:1",
+      "detail": "Проєктування інтерфейсів"
+    },
+    {
+      "actor_id": 11,
+      "action": "elective.approved",
+      "target": "enrollment:1",
+      "detail": ""
+    },
+    {
+      "actor_id": 11,
+      "action": "elective.approved",
+      "target": "enrollment:1",
+      "detail": ""
+    },
+    {
+      "actor_id": 11,
+      "action": "elective.rejected",
+      "target": "enrollment:1",
+      "detail": ""
+    },
+    {
+      "actor_id": 1,
+      "action": "elective.apply",
+      "target": "enrollment:2",
+      "detail": "Аналіз даних"
+    },
+    {
+      "actor_id": 1,
+      "action": "elective.cancel",
+      "target": "enrollment:2",
+      "detail": ""
+    },
+    {
+      "actor_id": 11,
+      "action": "elective_limits.save",
+      "target": "group:1",
+      "detail": "1 каталог 9 кр.; 2 каталог 12 кр.; усього дисциплін 10"
+    }
+  ],
+  "lateSteps": [
+    {
+      "label": "запит на виправлення",
+      "status": 201
+    },
+    {
+      "label": "запит повторно",
+      "status": 409
+    },
+    {
+      "label": "запит відхилено",
+      "status": 200
+    },
+    {
+      "label": "рішення повторно",
+      "status": 422
+    },
+    {
+      "label": "новий запит",
+      "status": 201
+    },
+    {
+      "label": "запит погоджено",
+      "status": 200
+    },
+    {
+      "label": "термін боргу",
+      "status": 200
+    },
+    {
+      "label": "закриття боргу",
+      "status": 409
+    },
+    {
+      "label": "некоректний статус боргу",
+      "status": 422
+    }
+  ],
+  "late": {
+    "notifications": [
+      {
+        "user_id": 1,
+        "message": "Відкрито вибір дисциплін на 2 семестр.",
+        "is_read": false
+      },
+      {
+        "user_id": 1,
+        "message": "Виникла академічна заборгованість: Немає оцінки обов’язкового екзамену. Термін ліквідації встановить деканат.",
+        "is_read": false
+      },
+      {
+        "user_id": 2,
+        "message": "Виникла академічна заборгованість: Немає оцінки обов’язкового екзамену. Термін ліквідації встановить деканат.",
+        "is_read": false
+      },
+      {
+        "user_id": 3,
+        "message": "Виникла академічна заборгованість: Немає оцінки обов’язкового екзамену. Термін ліквідації встановить деканат.",
+        "is_read": false
+      },
+      {
+        "user_id": 4,
+        "message": "Виникла академічна заборгованість: Підсумковий бал 0 нижче 50; Немає оцінки обов’язкового екзамену. Термін ліквідації встановить деканат.",
+        "is_read": false
+      },
+      {
+        "user_id": 5,
+        "message": "Виникла академічна заборгованість: Підсумковий бал 0 нижче 50; Немає оцінки обов’язкового екзамену. Термін ліквідації встановить деканат.",
+        "is_read": false
+      },
+      {
+        "user_id": 1,
+        "message": "Деканат погодив виправлення оцінки: 40.",
+        "is_read": false
+      },
+      {
+        "user_id": 1,
+        "message": "Термін ліквідації заборгованості: 01-03-2027.",
+        "is_read": false
+      }
+    ],
+    "audit": [
+      {
+        "actor_id": 7,
+        "action": "grade_correction.request",
+        "target": "request:1",
+        "detail": "90 → 40; Помилка при внесенні"
+      },
+      {
+        "actor_id": 11,
+        "action": "grade_correction.rejected",
+        "target": "request:1",
+        "detail": "90 → 40; Помилка при внесенні"
+      },
+      {
+        "actor_id": 7,
+        "action": "grade_correction.request",
+        "target": "request:2",
+        "detail": "90 → 40; Помилка при внесенні"
+      },
+      {
+        "actor_id": 11,
+        "action": "grade_correction.approved",
+        "target": "request:2",
+        "detail": "90 → 40; Помилка при внесенні"
+      },
+      {
+        "actor_id": 11,
+        "action": "debt.update",
+        "target": "debt:1",
+        "detail": "open; термін 01-03-2027"
+      }
+    ]
+  },
+  "debts": [
+    {
+      "student_id": 1,
+      "discipline_id": 1,
+      "status": "open",
+      "deadline": "2027-03-01"
+    },
+    {
+      "student_id": 2,
+      "discipline_id": 1,
+      "status": "open",
+      "deadline": null
+    },
+    {
+      "student_id": 3,
+      "discipline_id": 1,
+      "status": "open",
+      "deadline": null
+    },
+    {
+      "student_id": 4,
+      "discipline_id": 1,
+      "status": "open",
+      "deadline": null
+    },
+    {
+      "student_id": 5,
+      "discipline_id": 1,
+      "status": "open",
+      "deadline": null
+    }
+  ],
+  "corrections": [
+    {
+      "lesson_id": 1,
+      "student_id": 1,
+      "proposed_value": 40,
+      "previous_value": 90,
+      "status": "rejected"
+    },
+    {
+      "lesson_id": 1,
+      "student_id": 1,
+      "proposed_value": 40,
+      "previous_value": 90,
+      "status": "approved"
+    }
+  ]
+}
